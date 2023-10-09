@@ -1,0 +1,47 @@
+name: AWS CDK CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  cdk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14' # You can specify the desired Node.js version
+
+    - name: Install dependencies
+      run: |
+        cd infra
+        npm install
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    - name: CDK Diff
+      run: |
+        cd infra
+        npx cdk diff
+
+    # Only run CDK Deploy if it's a push to main (not on PRs)
+    - name: CDK Deploy
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        cd infra
+        npx cdk deploy --require-approval never
+

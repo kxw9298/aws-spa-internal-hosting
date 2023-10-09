@@ -10,7 +10,7 @@ export class S3Stack extends cdk.Stack {
 
     // Define the S3 Bucket with no public access
     this.bucket = new s3.Bucket(this, 'MyBucket', {
-      removalPolicy: cdk.RemovalPolicy.RETAIN, // Keep the bucket after stack deletion
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // Keep the bucket after stack deletion
       publicReadAccess: false,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       lifecycleRules: [{
@@ -20,7 +20,7 @@ export class S3Stack extends cdk.Stack {
 
     // Deploy local assets to the S3 bucket
     new s3deploy.BucketDeployment(this, 'DeployToLocalAsset', {
-      sources: [s3deploy.Source.asset('./path-to-local-asset-directory')], // Replace with your local directory path
+      sources: [s3deploy.Source.asset('./dist')], // Replace with your local directory path
       destinationBucket: this.bucket,
     });
   }
