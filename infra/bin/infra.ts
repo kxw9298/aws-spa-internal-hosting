@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
-import * as cdk from '@aws-cdk/core';
+import { App } from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
-import { S3Stack } from "../lib/s3-stack"
+import { S3Stack } from "../lib/s3-stack";
 import { MeshAppStack } from '../lib/mesh-app';
 import { ECRStack } from '../lib/ecr-stack';
 
-const app = new cdk.App();
+const app = new App();
 
-// const s3Stack = new S3Stack(app, 'MyS3Stack');
+const s3Stack = new S3Stack(app, 'MyS3Stack');
 
 // const vpcStack = new VpcStack(app, 'MyVpcStack');
 
