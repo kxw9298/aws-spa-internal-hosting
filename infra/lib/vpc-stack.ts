@@ -55,9 +55,9 @@ export class VpcStack extends cdk.Stack {
     });
 
     // Create the VPC Endpoint for S3
-    new ec2.GatewayVpcEndpoint(this, 'S3VpcEndpoint', {
-      service: ec2.GatewayVpcEndpointAwsService.S3,
-      vpc: this.vpc
-    });
+    // new ec2.GatewayVpcEndpoint(this, 'S3VpcEndpoint', {
+    //   service: ec2.GatewayVpcEndpointAwsService.S3,
+    //   vpc: this.vpc
+    // });
   }
 }
