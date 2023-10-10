@@ -3,8 +3,7 @@ import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
 import { LogDrivers } from 'aws-cdk-lib/aws-ecs';
-import { Stack, StackProps, Stage } from 'aws-cdk-lib';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
+import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 interface MeshAppStackProps extends cdk.StackProps {
@@ -23,8 +22,19 @@ export class MeshAppStack extends cdk.Stack {
       vpc: vpc
     });
 
+    // Define the ECS task role
+    const ecsTaskRole = new Role(this, 'ECSTaskRole', {
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
+    });
+
+    // Attach the AWS managed policy for task execution
+    ecsTaskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'));
+
     // Define the Fargate Task
-    const taskDef = new FargateTaskDefinition(this, 'NginxTask');
+    const taskDef = new FargateTaskDefinition(this, 'NginxTask', {
+      taskRole: ecsTaskRole,
+      // ... other properties ...
+    });
 
     const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
 
