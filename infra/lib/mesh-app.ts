@@ -41,15 +41,6 @@ export class MeshAppStack extends cdk.Stack {
     const container = taskDef.addContainer('NginxContainer', {
       image: ContainerImage.fromEcrRepository(nginxRepo, 'latest'),
       memoryLimitMiB: 512,
-      // Health check for Nginx
-      healthCheck: {
-        command: ['CMD-SHELL', 'curl -f http://localhost/ || exit 1'],
-        interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(5),
-        startPeriod: cdk.Duration.seconds(5),
-        retries: 3,
-      },
-      logging: LogDrivers.awsLogs({ streamPrefix: 'nginx' }), // enable logging
     });
 
     container.addPortMappings({
