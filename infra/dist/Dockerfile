@@ -1,10 +1,21 @@
-# Use Nginx as base image
+# Use the official Nginx image as a base
 FROM nginx:alpine
 
-# Copy the SPA angular static assets to Nginx's default directory
-COPY app/ /usr/share/nginx/html
+# Install required dependencies and AWS CLI
+RUN apt-get update && \
+    apt-get install -y curl unzip && \
+    curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    sudo ./aws/install
 
-# Expose port 80
-EXPOSE 80
+# Remove default Nginx website
+RUN rm -rf /usr/share/nginx/html/*
 
-CMD ["nginx", "-g", "daemon off;"]
+# Copy a startup script
+COPY start-nginx.sh /start-nginx.sh
+
+# Give execution permissions
+RUN chmod +x /start-nginx.sh
+
+# Start Nginx via the custom script
+CMD ["/start-nginx.sh"]
