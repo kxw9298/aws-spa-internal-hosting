@@ -2,11 +2,10 @@
 FROM nginx:alpine
 
 # Install required dependencies and AWS CLI
-RUN apt-get update && \
-    apt-get install -y curl unzip && \
+RUN apk --no-cache add curl unzip && \
     curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
-    sudo ./aws/install
+    ./aws/install
 
 # Remove default Nginx website
 RUN rm -rf /usr/share/nginx/html/*
