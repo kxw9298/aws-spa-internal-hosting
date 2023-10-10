@@ -38,10 +38,16 @@ jobs:
         cd infra
         npx cdk diff
 
+    # Bootstrap the CDK environment before deploying
+    - name: CDK Bootstrap
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        cd infra
+        npx cdk bootstrap
+
     # Only run CDK Deploy if it's a push to main (not on PRs)
     - name: CDK Deploy
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         cd infra
         npx cdk deploy --require-approval never
-
