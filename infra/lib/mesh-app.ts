@@ -2,12 +2,14 @@ import * as cdk from 'aws-cdk-lib';
 import { Vpc, SubnetType, SecurityGroup, Peer, Port } from 'aws-cdk-lib/aws-ec2';
 import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
-import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 
 interface MeshAppStackProps extends cdk.StackProps {
   vpc: Vpc;
   nginxRepoName: string;
+  bucket: s3.IBucket;
 }
 
 export class MeshAppStack extends cdk.Stack {
@@ -28,6 +30,14 @@ export class MeshAppStack extends cdk.Stack {
 
     // Attach the AWS managed policy for task execution
     ecsTaskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
+
+    const bucketPolicy = new PolicyStatement({
+      actions: ['s3:GetObject', 's3:ListBucket'],
+      resources: [props.bucket.bucketArn, props.bucket.arnForObjects('*')],
+      effect: Effect.ALLOW,
+    });
+
+    ecsTaskRole.addToPolicy(bucketPolicy);
 
     // Define the Fargate Task
     const taskDef = new FargateTaskDefinition(this, 'NginxTask', {
@@ -50,10 +60,10 @@ export class MeshAppStack extends cdk.Stack {
       vpc: vpc,
       description: 'Allow all inbound traffic from within VPC',
       allowAllOutbound: true,  // default
-  });
-  
-  // Allow all inbound traffic from within the VPC
-  mySecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
+    });
+
+    // Allow all inbound traffic from within the VPC
+    mySecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
 
     // Create Fargate Service
     new FargateService(this, 'NginxService', {

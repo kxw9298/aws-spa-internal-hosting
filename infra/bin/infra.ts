@@ -18,7 +18,8 @@ const ecrStack = new ECRStack(app, 'MyECRStack');
 
 const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
   vpc: vpcStack.vpc,
-  nginxRepoName: ecrStack.nginxRepo.repositoryName
+  nginxRepoName: ecrStack.nginxRepo.repositoryName,
+  bucket: s3Stack.bucket
 }
 )
 new BastionStack(app, 'MyBastionStack', {

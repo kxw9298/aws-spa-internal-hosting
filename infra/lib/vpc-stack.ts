@@ -14,7 +14,7 @@ export class VpcStack extends cdk.Stack {
       ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/24'),
       maxAzs: 1,
       subnetConfiguration: [
-        
+
         {
           cidrMask: 28,
           name: 'Isolated',
@@ -54,5 +54,10 @@ export class VpcStack extends cdk.Stack {
       vpc: this.vpc,
     });
 
+    // Create the VPC Endpoint for S3
+    new ec2.GatewayVpcEndpoint(this, 'S3VpcEndpoint', {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+      vpc: this.vpc
+    });
   }
 }
