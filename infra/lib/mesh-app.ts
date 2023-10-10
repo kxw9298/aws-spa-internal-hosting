@@ -3,9 +3,13 @@ import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
 import { LogDrivers } from 'aws-cdk-lib/aws-ecs';
+import { Stack, StackProps, Stage } from 'aws-cdk-lib';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 interface MeshAppStackProps extends cdk.StackProps {
   vpc: Vpc;
+  nginxRepoName: string;
 }
 
 export class MeshAppStack extends cdk.Stack {
@@ -22,8 +26,10 @@ export class MeshAppStack extends cdk.Stack {
     // Define the Fargate Task
     const taskDef = new FargateTaskDefinition(this, 'NginxTask');
 
+    const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
+
     const container = taskDef.addContainer('NginxContainer', {
-      image: ContainerImage.fromRegistry('nginx:latest'),
+      image: ContainerImage.fromEcrRepository(nginxRepo, 'latest'),
       memoryLimitMiB: 512,
       // Health check for Nginx
       healthCheck: {
