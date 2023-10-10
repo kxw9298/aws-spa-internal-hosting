@@ -30,5 +30,20 @@ export class VpcStack extends cdk.Stack {
       service: InterfaceVpcEndpointAwsService.SSM,
       privateDnsEnabled: true, // Important for name resolution
     });
+
+    // VPC Endpoint for ECR API
+    const ecrApiEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EcrApiEndpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.ECR,
+      privateDnsEnabled: true,
+      vpc: this.vpc,
+    });
+
+    // VPC Endpoint for ECR DKR (Docker) 
+    const ecrDkrEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EcrDkrEndpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+      privateDnsEnabled: true,
+      vpc: this.vpc,
+    });
+
   }
 }
