@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { Vpc, SubnetType, GatewayVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, SubnetType, GatewayVpcEndpointAwsService, InterfaceVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
@@ -23,6 +23,12 @@ export class VpcStack extends cdk.Stack {
     // Define the VPC Endpoint for S3
     const vpcEndpoint = this.vpc.addGatewayEndpoint('S3Endpoint', {
       service: GatewayVpcEndpointAwsService.S3,
+    });
+
+    // Define VPC Interface Endpoints for Systems Manager (SSM)
+    const ssmEndpoint = this.vpc.addInterfaceEndpoint('SSMEndpoint', {
+      service: InterfaceVpcEndpointAwsService.SSM,
+      privateDnsEnabled: true, // Important for name resolution
     });
   }
 }

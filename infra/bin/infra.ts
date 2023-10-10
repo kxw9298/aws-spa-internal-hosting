@@ -6,6 +6,7 @@ import { VpcStack } from '../lib/vpc-stack';
 import { S3Stack } from "../lib/s3-stack";
 import { MeshAppStack } from '../lib/mesh-app';
 import { ECRStack } from '../lib/ecr-stack';
+import { BastionStack } from '../lib/bastion-stack';
 
 const app = new cdk.App();
 
@@ -19,3 +20,7 @@ const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
   vpc: vpcStack.vpc
 }
 )
+
+new BastionStack(app, 'MyBastionStack', {
+  vpc: vpcStack.vpc
+});
