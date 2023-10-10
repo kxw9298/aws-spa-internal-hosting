@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import { App } from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
 import { S3Stack } from "../lib/s3-stack";
 import { MeshAppStack } from '../lib/mesh-app';
 import { ECRStack } from '../lib/ecr-stack';
 
-const app = new App();
+const app = new cdk.App();
 
 const s3Stack = new S3Stack(app, 'MyS3Stack');
 
