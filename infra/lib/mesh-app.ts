@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { Vpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, SubnetType, SecurityGroup, Peer, Port } from 'aws-cdk-lib/aws-ec2';
 import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
 import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
@@ -46,6 +46,15 @@ export class MeshAppStack extends cdk.Stack {
       containerPort: 80,
     });
 
+    const mySecurityGroup = new SecurityGroup(this, 'MySecurityGroup', {
+      vpc: vpc,
+      description: 'Allow all inbound traffic from within VPC',
+      allowAllOutbound: true,  // default
+  });
+  
+  // Allow all inbound traffic from within the VPC
+  mySecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
+
     // Create Fargate Service
     new FargateService(this, 'NginxService', {
       cluster: cluster,
@@ -54,7 +63,8 @@ export class MeshAppStack extends cdk.Stack {
       assignPublicIp: false,  // This ensures the Fargate task does NOT have a public IP
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_ISOLATED
-      }
+      },
+      securityGroups: [mySecurityGroup]
     });
   }
 }
