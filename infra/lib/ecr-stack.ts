@@ -13,15 +13,5 @@ export class ECRStack extends Stack {
       repositoryName: 'my-nginx-repo',
       removalPolicy: RemovalPolicy.DESTROY,  // Only for dev/test environments
     });
-
-    // Step 2: Build & Push Docker Image to ECR
-    const dockerImageAsset = new DockerImageAsset(this, 'DockerImageAsset', {
-      directory: './lib/dist',  // Point to the directory containing your Dockerfile
-    });
-
-    // Use the ECR image in your ECS service/task definition
-    const containerImage = ContainerImage.fromEcrRepository(repository, dockerImageAsset.imageUri);
-
-    // ... The rest of your ECS service/task definition setup
   }
 }
