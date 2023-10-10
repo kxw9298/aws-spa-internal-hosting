@@ -18,7 +18,7 @@ export class BastionStack extends cdk.Stack {
             assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
         });
 
-        ssmRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2RoleforSSM'));
+        ssmRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2RoleforSSM'));
 
         // Create the EC2 instance
         new Instance(this, 'BastionHost', {
