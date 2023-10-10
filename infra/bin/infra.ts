@@ -15,8 +15,7 @@ const vpcStack = new VpcStack(app, 'MyVpcStack');
 
 // const ecrStack = new ECRStack(app, 'MyECRStack');
 
-// const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
-//   vpc: vpcStack.vpc,
-//   ecrRepository: ecrStack.Repository
-// }
-// )
+const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
+  vpc: vpcStack.vpc
+}
+)
