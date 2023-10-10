@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Vpc, SubnetType, GatewayVpcEndpointAwsService } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 export class VpcStack extends cdk.Stack {
   public readonly vpc: Vpc;
@@ -10,7 +11,7 @@ export class VpcStack extends cdk.Stack {
 
     // Define the VPC
     this.vpc = new Vpc(this, 'MyVpc', {
-      cidr: '10.0.0.0/24',
+      ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/24'),
       maxAzs: 1,
       subnetConfiguration: [{
         cidrMask: 28,
