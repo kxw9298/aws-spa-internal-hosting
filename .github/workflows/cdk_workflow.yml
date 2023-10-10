@@ -50,4 +50,4 @@ jobs:
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         cd infra
-        npx cdk deploy --require-approval never
+        npx cdk deploy --all --require-approval never
