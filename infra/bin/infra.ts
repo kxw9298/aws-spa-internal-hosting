@@ -11,7 +11,7 @@ const app = new cdk.App();
 
 const s3Stack = new S3Stack(app, 'MyS3Stack');
 
-// const vpcStack = new VpcStack(app, 'MyVpcStack');
+const vpcStack = new VpcStack(app, 'MyVpcStack');
 
 // const ecrStack = new ECRStack(app, 'MyECRStack');
 
