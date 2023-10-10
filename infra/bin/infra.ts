@@ -14,12 +14,12 @@ const s3Stack = new S3Stack(app, 'MyS3Stack');
 
 const vpcStack = new VpcStack(app, 'MyVpcStack');
 
-// const ecrStack = new ECRStack(app, 'MyECRStack');
+const ecrStack = new ECRStack(app, 'MyECRStack');
 
-const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
-  vpc: vpcStack.vpc
-}
-)
+// const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
+//   vpc: vpcStack.vpc
+// }
+// )
 
 new BastionStack(app, 'MyBastionStack', {
   vpc: vpcStack.vpc
