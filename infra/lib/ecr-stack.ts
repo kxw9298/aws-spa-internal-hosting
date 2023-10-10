@@ -16,7 +16,7 @@ export class ECRStack extends Stack {
 
     // Step 2: Build & Push Docker Image to ECR
     const dockerImageAsset = new DockerImageAsset(this, 'DockerImageAsset', {
-      directory: './dist',  // Point to the directory containing your Dockerfile
+      directory: './lib/dist',  // Point to the directory containing your Dockerfile
     });
 
     // Use the ECR image in your ECS service/task definition
