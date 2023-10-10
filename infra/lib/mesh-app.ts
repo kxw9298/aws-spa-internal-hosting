@@ -28,7 +28,7 @@ export class MeshAppStack extends cdk.Stack {
     });
 
     // Attach the AWS managed policy for task execution
-    ecsTaskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'));
+    ecsTaskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
 
     // Define the Fargate Task
     const taskDef = new FargateTaskDefinition(this, 'NginxTask', {
