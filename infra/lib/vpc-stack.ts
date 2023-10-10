@@ -13,11 +13,19 @@ export class VpcStack extends cdk.Stack {
     this.vpc = new Vpc(this, 'MyVpc', {
       ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/24'),
       maxAzs: 1,
-      subnetConfiguration: [{
-        cidrMask: 28,
-        name: 'Isolated',
-        subnetType: SubnetType.PRIVATE_ISOLATED,
-      }],
+      subnetConfiguration: [
+        {
+          cidrMask: 28,
+          name: 'Public',
+          subnetType: SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 28,
+          name: 'Isolated',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        }
+      ],
+      natGateways: 0, // No NAT gateways required
     });
 
     // Define the VPC Endpoint for S3

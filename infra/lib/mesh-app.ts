@@ -1,8 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
-import { Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
-import { LogDrivers } from 'aws-cdk-lib/aws-ecs';
 import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 
@@ -52,6 +51,10 @@ export class MeshAppStack extends cdk.Stack {
       cluster: cluster,
       taskDefinition: taskDef,
       desiredCount: 1,
+      assignPublicIp: false,  // This ensures the Fargate task does NOT have a public IP
+      vpcSubnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED
+      }
     });
   }
 }

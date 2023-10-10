@@ -26,7 +26,7 @@ export class BastionStack extends cdk.Stack {
             vpc: vpc,
             instanceType: new InstanceType('t2.micro'),
             machineImage: MachineImage.latestAmazonLinux2(), // Use latest Amazon Linux AMI
-            vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED }, // Place in the private subnet
+            vpcSubnets: { subnetType: SubnetType.PUBLIC }, // Place in the private subnet
             keyName: 'my-keypair',
             securityGroup: bastionSecurityGroup
         });
