@@ -19,7 +19,7 @@ export class S3Stack extends cdk.Stack {
 
     // Deploy local assets to the S3 bucket
     new s3deploy.BucketDeployment(this, 'DeployToLocalAsset', {
-      sources: [s3deploy.Source.asset('./lib/dist')],  // Replace with your local directory path
+      sources: [s3deploy.Source.asset('./dist')],  // Replace with your local directory path
       destinationBucket: this.bucket,
     });
   }
