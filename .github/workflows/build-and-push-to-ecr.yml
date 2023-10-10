@@ -3,7 +3,7 @@ name: Build and Push Docker image to ECR
 on:
   push:
     paths:
-      - 'infra/dist/app/**'
+      - 'infra/dist/**'
 
 jobs:
   build_and_push:
