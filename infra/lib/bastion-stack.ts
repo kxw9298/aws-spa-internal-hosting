@@ -13,20 +13,14 @@ export class BastionStack extends cdk.Stack {
 
         const vpc = props.vpc;
 
-        // Define a role for the instance that allows it to be managed by SSM
-        const ssmRole = new Role(this, 'SSMInstanceRole', {
-            assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
-        });
-
-        ssmRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2RoleforSSM'));
-
         // Create the EC2 instance
         new Instance(this, 'BastionHost', {
             vpc: vpc,
             instanceType: new InstanceType('t2.micro'),
             machineImage: MachineImage.latestAmazonLinux2(), // Use latest Amazon Linux AMI
             vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED }, // Place in the private subnet
-            role: ssmRole
+            keyName: 'my-keypair'
         });
+
     }
 }
