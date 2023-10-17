@@ -81,5 +81,34 @@ export class SftpEfsStack extends cdk.Stack {
         });
 
         this.fileSystem = fileSystem;
+
+        // Security Group for the jump box
+        const jumpBoxSecurityGroup = new ec2.SecurityGroup(this, 'JumpBoxSG', {
+            vpc,
+            description: 'Allow SSH access to jump box',
+            allowAllOutbound: true,
+        });
+
+        jumpBoxSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH');
+
+        // Create a JumpBox
+        const jumpBox = new ec2.Instance(this, 'JumpBox', {
+            vpc,
+            vpcSubnets: {
+                subnetType: ec2.SubnetType.PUBLIC,
+            },
+            instanceType: new ec2.InstanceType('t2.micro'),
+            machineImage: new ec2.AmazonLinuxImage(),
+            securityGroup: jumpBoxSecurityGroup,
+            keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
+            userData: ec2.UserData.custom(`
+          #!/bin/bash
+          yum install -y amazon-efs-utils
+          mkdir /mnt/efs
+          mount -t efs ${fileSystem.fileSystemId}:/ /mnt/efs
+        `),
+        });
+
+        fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
     }
 }
