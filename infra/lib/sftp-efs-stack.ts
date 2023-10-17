@@ -58,7 +58,7 @@ export class SftpEfsStack extends cdk.Stack {
             fileSystemPolicy: new iam.PolicyDocument({
                 statements: [
                     new iam.PolicyStatement({
-                        actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite"],
+                        actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite", "elasticfilesystem:ClientRootAccess"],
                         effect: iam.Effect.ALLOW,
                         resources: ["*"],  // This assumes you want to allow access to any resource
                         principals: [jumpBoxRole],  // Replace with the ARN of the EC2 instance role
