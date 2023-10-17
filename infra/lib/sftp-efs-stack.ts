@@ -17,6 +17,26 @@ export class SftpEfsStack extends cdk.Stack {
 
         const vpc = props.vpc;
 
+        // Security Group for the jump box
+        const jumpBoxSecurityGroup = new ec2.SecurityGroup(this, 'JumpBoxSG', {
+            vpc,
+            description: 'Allow SSH access to jump box',
+            allowAllOutbound: true,
+        });
+
+        jumpBoxSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH');
+
+        const efsSecurityGroup = new ec2.SecurityGroup(this, 'EfsSecurityGroup', {
+            vpc: vpc,
+            securityGroupName: 'efsSecurityGroup',
+            description: 'Amazon EFS walkthrough 1, SG for EC2 instance',
+            allowAllOutbound: true,  // Adjust this based on your requirements
+        });
+
+        efsSecurityGroup.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.tcp(2049), 'Allow NFS traffic from within VPC');
+        // Allow NFS traffic from EC2 security group to EFS mount target security group
+        efsSecurityGroup.addIngressRule(jumpBoxSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+
         // Create an EFS FileSystem
         const fileSystem = new efs.FileSystem(this, 'MyEfsFileSystem', {
             vpc,
@@ -25,16 +45,23 @@ export class SftpEfsStack extends cdk.Stack {
         });
 
         // Create VPC Endpoint for EFS
-        const efsEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EfsEndpoint', {
-            service: ec2.InterfaceVpcEndpointAwsService.ELASTIC_FILESYSTEM,
-            vpc: vpc,
-            privateDnsEnabled: true,
-            securityGroups: [fileSystem.connections.securityGroups[0]],  // Use the EFS's security group
-        });
+        // const efsEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EfsEndpoint', {
+        //     service: ec2.InterfaceVpcEndpointAwsService.ELASTIC_FILESYSTEM,
+        //     vpc: vpc,
+        //     privateDnsEnabled: true,
+        //     securityGroups: [fileSystem.connections.securityGroups[0]],  // Use the EFS's security group
+        // });
 
         // Update the EFS's security group to allow NFS traffic
-        const efsSecurityGroup = fileSystem.connections.securityGroups[0];
-        efsSecurityGroup.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.tcp(2049), 'Allow NFS traffic from within VPC');
+        // const efsSecurityGroup = fileSystem.connections.securityGroups[0];
+
+        const publicSubnets = vpc.selectSubnets({ subnetType: ec2.SubnetType.PUBLIC });
+
+        new efs.CfnMountTarget(this, 'EfsMountTarget', {
+            fileSystemId: fileSystem.fileSystemId,
+            securityGroups: [efsSecurityGroup.securityGroupId],
+            subnetId: publicSubnets.subnetIds[0]
+          });
 
         // Create an EFS Access Point with a specified path
         const accessPoint = new efs.AccessPoint(this, 'EfsAccessPoint', {
@@ -83,14 +110,7 @@ export class SftpEfsStack extends cdk.Stack {
 
         this.fileSystem = fileSystem;
 
-        // Security Group for the jump box
-        const jumpBoxSecurityGroup = new ec2.SecurityGroup(this, 'JumpBoxSG', {
-            vpc,
-            description: 'Allow SSH access to jump box',
-            allowAllOutbound: true,
-        });
 
-        jumpBoxSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH');
 
         // Define IAM Role for the EC2 instance with S3 read permissions
         const jumpBoxRole = new iam.Role(this, 'JumpBoxRole', {
@@ -98,12 +118,12 @@ export class SftpEfsStack extends cdk.Stack {
         });
 
         jumpBoxRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
-        
+
         jumpBoxRole.addToPolicy(new iam.PolicyStatement({
             actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
             resources: [fileSystem.fileSystemArn],
-          }));
-        
+        }));
+
         const region = this.region; // Get the current stack's region
         // Create a JumpBox
         const jumpBox = new ec2.Instance(this, 'JumpBox', {
@@ -118,13 +138,13 @@ export class SftpEfsStack extends cdk.Stack {
             keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
             userData: ec2.UserData.custom(`
               #!/bin/bash
-              sudo yum install -y amazon-efs-utils
-              sudo mkdir /mnt/efs
-              sudo mount -t efs -o tls ${fileSystem.fileSystemId}.efs.${region}.amazonaws.com:/ /mnt/efs
-              sudo chown ec2-user:ec2-user /mnt/efs
+              sudo yum -y install nfs-utils
+              mkdir ~/efs-mount-point
+              sudo mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${fileSystem.fileSystemId}.efs.${region}.amazonaws.com:/ ~/efs-mount-point 
+              sudo chown ec2-user:ec2-user ~/efs-mount-point
             `),
         });
-        
+
         // Security group updates for EFS and EC2 to communicate
         fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
         jumpBox.connections.allowTo(fileSystem, ec2.Port.tcp(2049), 'Allow EFS access from EC2');
