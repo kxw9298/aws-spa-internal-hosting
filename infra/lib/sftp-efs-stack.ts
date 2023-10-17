@@ -67,6 +67,9 @@ export class SftpEfsStack extends cdk.Stack {
             }),
         });
 
+        // Mount targets in all subnets
+        fileSystem.connections.securityGroups.push(efsSecurityGroup);
+
         jumpBoxRole.addToPolicy(new iam.PolicyStatement({
             actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
             resources: [fileSystem.fileSystemArn],
@@ -82,6 +85,10 @@ export class SftpEfsStack extends cdk.Stack {
                 ownerUid: '1000',
                 permissions: '755',
             },
+            posixUser: {
+                uid: '1000',
+                gid: '1000',
+              },
         });
 
         // SFTP user's role
@@ -97,7 +104,6 @@ export class SftpEfsStack extends cdk.Stack {
             endpointType: 'PUBLIC',
             identityProviderType: 'SERVICE_MANAGED',
             protocols: ['SFTP'],
-            loggingRole: sftpRole.roleArn,
         });
 
         // Create an SFTP user with EFS as the home directory
