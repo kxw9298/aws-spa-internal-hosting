@@ -72,24 +72,6 @@ export class SftpEfsStack extends cdk.Stack {
             resources: [fileSystem.fileSystemArn],
         }));
 
-        // Create VPC Endpoint for EFS
-        // const efsEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EfsEndpoint', {
-        //     service: ec2.InterfaceVpcEndpointAwsService.ELASTIC_FILESYSTEM,
-        //     vpc: vpc,
-        //     privateDnsEnabled: true,
-        //     securityGroups: [fileSystem.connections.securityGroups[0]],  // Use the EFS's security group
-        // });
-
-        // Update the EFS's security group to allow NFS traffic
-        // const efsSecurityGroup = fileSystem.connections.securityGroups[0];
-
-        // const publicSubnets = vpc.selectSubnets({ subnetType: ec2.SubnetType.PUBLIC });
-
-        // new efs.CfnMountTarget(this, 'EfsMountTarget', {
-        //     fileSystemId: fileSystem.fileSystemId,
-        //     securityGroups: [efsSecurityGroup.securityGroupId],
-        //     subnetId: publicSubnets.subnetIds[0]
-        //   });
 
         // Create an EFS Access Point with a specified path
         const accessPoint = new efs.AccessPoint(this, 'EfsAccessPoint', {
@@ -129,19 +111,6 @@ export class SftpEfsStack extends cdk.Stack {
 
         sftpUser.node.addDependency(sftpServer);
 
-
-        // Outputs
-        new cdk.CfnOutput(this, 'SftpEndpoint', {
-            value: sftpServer.attrServerId + '.server.transfer.amazonaws.com',
-            description: 'SFTP Endpoint',
-        });
-
-        this.fileSystem = fileSystem;
-
-
-
-       
-
         const region = this.region; // Get the current stack's region
         // Create a JumpBox
         const jumpBox = new ec2.Instance(this, 'JumpBox', {
@@ -166,5 +135,19 @@ export class SftpEfsStack extends cdk.Stack {
         // Security group updates for EFS and EC2 to communicate
         fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
         jumpBox.connections.allowTo(fileSystem, ec2.Port.tcp(2049), 'Allow EFS access from EC2');
+
+         // Outputs
+         new cdk.CfnOutput(this, 'SftpEndpoint', {
+            value: sftpServer.attrServerId + '.server.transfer.amazonaws.com',
+            description: 'SFTP Endpoint',
+        });
+
+        new cdk.CfnOutput(this, 'EFSMountPoint', {
+            value: fileSystem.fileSystemId + '.efs.us-east-1.amazonaws.com',
+            description: 'EFS Mount Endpoint',
+        });
+
+        this.fileSystem = fileSystem;
+
     }
 }
