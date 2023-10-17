@@ -21,6 +21,7 @@ export class SftpEfsStack extends cdk.Stack {
         const fileSystem = new efs.FileSystem(this, 'MyEfsFileSystem', {
             vpc,
             lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         // Create VPC Endpoint for EFS
@@ -97,8 +98,13 @@ export class SftpEfsStack extends cdk.Stack {
         });
 
         jumpBoxRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
-
-
+        
+        jumpBoxRole.addToPolicy(new iam.PolicyStatement({
+            actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
+            resources: [fileSystem.fileSystemArn],
+          }));
+        
+        const region = this.region; // Get the current stack's region
         // Create a JumpBox
         const jumpBox = new ec2.Instance(this, 'JumpBox', {
             vpc,
@@ -112,14 +118,15 @@ export class SftpEfsStack extends cdk.Stack {
             keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
             userData: ec2.UserData.custom(`
               #!/bin/bash
-              yum install -y amazon-efs-utils
-              mkdir /mnt/efs
-              mount -t efs ${fileSystem.fileSystemId}:/ /mnt/efs
-              chown ec2-user:ec2-user /mnt/efs
+              sudo yum install -y amazon-efs-utils
+              sudo mkdir /mnt/efs
+              sudo mount -t efs -o tls ${fileSystem.fileSystemId}.efs.${region}.amazonaws.com:/ /mnt/efs
+              sudo chown ec2-user:ec2-user /mnt/efs
             `),
         });
         
-
+        // Security group updates for EFS and EC2 to communicate
         fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
+        jumpBox.connections.allowTo(fileSystem, ec2.Port.tcp(2049), 'Allow EFS access from EC2');
     }
 }
