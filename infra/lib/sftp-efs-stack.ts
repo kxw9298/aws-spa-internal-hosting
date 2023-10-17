@@ -42,6 +42,7 @@ export class SftpEfsStack extends cdk.Stack {
             vpc,
             lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
+            securityGroup: efsSecurityGroup
         });
 
         // Create VPC Endpoint for EFS
@@ -55,13 +56,13 @@ export class SftpEfsStack extends cdk.Stack {
         // Update the EFS's security group to allow NFS traffic
         // const efsSecurityGroup = fileSystem.connections.securityGroups[0];
 
-        const publicSubnets = vpc.selectSubnets({ subnetType: ec2.SubnetType.PUBLIC });
+        // const publicSubnets = vpc.selectSubnets({ subnetType: ec2.SubnetType.PUBLIC });
 
-        new efs.CfnMountTarget(this, 'EfsMountTarget', {
-            fileSystemId: fileSystem.fileSystemId,
-            securityGroups: [efsSecurityGroup.securityGroupId],
-            subnetId: publicSubnets.subnetIds[0]
-          });
+        // new efs.CfnMountTarget(this, 'EfsMountTarget', {
+        //     fileSystemId: fileSystem.fileSystemId,
+        //     securityGroups: [efsSecurityGroup.securityGroupId],
+        //     subnetId: publicSubnets.subnetIds[0]
+        //   });
 
         // Create an EFS Access Point with a specified path
         const accessPoint = new efs.AccessPoint(this, 'EfsAccessPoint', {
