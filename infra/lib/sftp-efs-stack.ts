@@ -91,12 +91,21 @@ export class SftpEfsStack extends cdk.Stack {
 
         jumpBoxSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH');
 
+        // Define IAM Role for the EC2 instance with S3 read permissions
+        const jumpBoxRole = new iam.Role(this, 'JumpBoxRole', {
+            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        });
+
+        jumpBoxRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
+
+
         // Create a JumpBox
         const jumpBox = new ec2.Instance(this, 'JumpBox', {
             vpc,
             vpcSubnets: {
                 subnetType: ec2.SubnetType.PUBLIC,
             },
+            role: jumpBoxRole,  // Assign the role to the EC2 instance
             instanceType: new ec2.InstanceType('t2.micro'),
             machineImage: new ec2.AmazonLinuxImage(),
             securityGroup: jumpBoxSecurityGroup,
