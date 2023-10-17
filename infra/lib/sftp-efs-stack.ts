@@ -51,7 +51,8 @@ export class SftpEfsStack extends cdk.Stack {
             assumedBy: new iam.ServicePrincipal('transfer.amazonaws.com'),
         });
 
-        fileSystem.grant(sftpRole, 'elasticfilesystem:ClientWrite');
+        fileSystem.grant(sftpRole, 'elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRead');
+
 
         // Create AWS Transfer for SFTP Server 
         const sftpServer = new transfer.CfnServer(this, 'SftpServer', {
