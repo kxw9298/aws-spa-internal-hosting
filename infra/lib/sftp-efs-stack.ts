@@ -37,6 +37,15 @@ export class SftpEfsStack extends cdk.Stack {
         // Allow NFS traffic from EC2 security group to EFS mount target security group
         efsSecurityGroup.addIngressRule(jumpBoxSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
 
+         // Define IAM Role for the EC2 instance with S3 read permissions
+         const jumpBoxRole = new iam.Role(this, 'JumpBoxRole', {
+            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        });
+
+        jumpBoxRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
+
+        
+
         // Create an EFS FileSystem
         const fileSystem = new efs.FileSystem(this, 'MyEfsFileSystem', {
             vpc,
@@ -45,8 +54,23 @@ export class SftpEfsStack extends cdk.Stack {
             //   },
             lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
-            securityGroup: efsSecurityGroup
+            securityGroup: efsSecurityGroup,
+            fileSystemPolicy: new iam.PolicyDocument({
+                statements: [
+                    new iam.PolicyStatement({
+                        actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite"],
+                        effect: iam.Effect.ALLOW,
+                        resources: ["*"],  // This assumes you want to allow access to any resource
+                        principals: [jumpBoxRole],  // Replace with the ARN of the EC2 instance role
+                    }),
+                ],
+            }),
         });
+
+        jumpBoxRole.addToPolicy(new iam.PolicyStatement({
+            actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
+            resources: [fileSystem.fileSystemArn],
+        }));
 
         // Create VPC Endpoint for EFS
         // const efsEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EfsEndpoint', {
@@ -116,17 +140,7 @@ export class SftpEfsStack extends cdk.Stack {
 
 
 
-        // Define IAM Role for the EC2 instance with S3 read permissions
-        const jumpBoxRole = new iam.Role(this, 'JumpBoxRole', {
-            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
-        });
-
-        jumpBoxRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
-
-        jumpBoxRole.addToPolicy(new iam.PolicyStatement({
-            actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
-            resources: [fileSystem.fileSystemArn],
-        }));
+       
 
         const region = this.region; // Get the current stack's region
         // Create a JumpBox
