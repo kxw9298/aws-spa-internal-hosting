@@ -40,9 +40,9 @@ export class SftpEfsStack extends cdk.Stack {
         // Create an EFS FileSystem
         const fileSystem = new efs.FileSystem(this, 'MyEfsFileSystem', {
             vpc,
-            vpcSubnets: {
-                subnetType: ec2.SubnetType.PUBLIC, // Example: Use isolated/private subnet
-              },
+            // vpcSubnets: {
+            //     subnetType: ec2.SubnetType.PUBLIC, // Example: Use isolated/private subnet
+            //   },
             lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             securityGroup: efsSecurityGroup
