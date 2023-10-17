@@ -7,6 +7,7 @@ import { S3Stack } from "../lib/s3-stack";
 import { MeshAppStack } from '../lib/mesh-app';
 import { ECRStack } from '../lib/ecr-stack';
 import { BastionStack } from '../lib/bastion-stack';
+import { SftpEfsStack } from '../lib/sftp-efs-stack';
 
 const app = new cdk.App();
 
@@ -25,3 +26,5 @@ const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
 new BastionStack(app, 'MyBastionStack', {
   vpc: vpcStack.vpc
 });
+
+const sftpEfsStack = new SftpEfsStack(app, 'MySftpEfsStack', { vpc: vpcStack.vpc });
