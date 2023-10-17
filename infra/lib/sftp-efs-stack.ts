@@ -111,12 +111,14 @@ export class SftpEfsStack extends cdk.Stack {
             securityGroup: jumpBoxSecurityGroup,
             keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
             userData: ec2.UserData.custom(`
-          #!/bin/bash
-          yum install -y amazon-efs-utils
-          mkdir /mnt/efs
-          mount -t efs ${fileSystem.fileSystemId}:/ /mnt/efs
-        `),
+              #!/bin/bash
+              yum install -y amazon-efs-utils
+              mkdir /mnt/efs
+              mount -t efs ${fileSystem.fileSystemId}:/ /mnt/efs
+              chown ec2-user:ec2-user /mnt/efs
+            `),
         });
+        
 
         fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
     }
