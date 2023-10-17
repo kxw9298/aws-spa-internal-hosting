@@ -26,7 +26,7 @@ export class SftpEfsStack extends cdk.Stack {
         // Create an EFS Access Point with a specified path
         const accessPoint = new efs.AccessPoint(this, 'EfsAccessPoint', {
             fileSystem: fileSystem,
-            path: '/spa',  // Specify the path for the access point
+            path: '/',  // Specify the path for the access point
             createAcl: {
                 ownerGid: '1000',
                 ownerUid: '1000',
@@ -54,7 +54,7 @@ export class SftpEfsStack extends cdk.Stack {
             serverId: sftpServer.attrServerId,
             userName: 'mySftpUser',
             role: sftpRole.roleArn,
-            homeDirectory: `/${accessPoint.accessPointId}/spa`,
+            homeDirectory: `/${accessPoint.accessPointId}`,
         });
 
         sftpUser.node.addDependency(sftpServer);
