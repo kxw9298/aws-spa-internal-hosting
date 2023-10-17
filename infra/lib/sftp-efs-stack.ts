@@ -23,6 +23,18 @@ export class SftpEfsStack extends cdk.Stack {
             lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
         });
 
+        // Create VPC Endpoint for EFS
+        const efsEndpoint = new ec2.InterfaceVpcEndpoint(this, 'EfsEndpoint', {
+            service: ec2.InterfaceVpcEndpointAwsService.ELASTIC_FILESYSTEM,
+            vpc: vpc,
+            privateDnsEnabled: true,
+            securityGroups: [fileSystem.connections.securityGroups[0]],  // Use the EFS's security group
+        });
+
+        // Update the EFS's security group to allow NFS traffic
+        const efsSecurityGroup = fileSystem.connections.securityGroups[0];
+        efsSecurityGroup.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.tcp(2049), 'Allow NFS traffic from within VPC');
+
         // Create an EFS Access Point with a specified path
         const accessPoint = new efs.AccessPoint(this, 'EfsAccessPoint', {
             fileSystem: fileSystem,
