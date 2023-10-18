@@ -12,7 +12,7 @@ export class VpcStack extends cdk.Stack {
     // Define the VPC
     this.vpc = new Vpc(this, 'MyVpc', {
       ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/24'),
-      maxAzs: 1,
+      maxAzs: 2,
       subnetConfiguration: [
 
         {
