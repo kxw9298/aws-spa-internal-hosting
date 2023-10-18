@@ -16,11 +16,11 @@ const vpcStack = new VpcStack(app, 'MyVpcStack');
 
 const ecrStack = new ECRStack(app, 'MyECRStack');
 
-// const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
-//   vpc: vpcStack.vpc,
-//   nginxRepoName: ecrStack.nginxRepo.repositoryName,
-//   bucket: s3Stack.bucket
-// }
-// )
+const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
+  vpc: vpcStack.vpc,
+  nginxRepoName: ecrStack.nginxRepo.repositoryName,
+  bucket: s3Stack.bucket
+}
+)
 
 const sftpEfsStack = new SftpEfsStack(app, 'MySftpEfsStack', { vpc: vpcStack.vpc });

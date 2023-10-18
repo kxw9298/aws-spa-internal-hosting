@@ -5,6 +5,7 @@ import { Construct } from 'constructs';
 import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationListener, ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 interface MeshAppStackProps extends cdk.StackProps {
   vpc: Vpc;
@@ -66,15 +67,58 @@ export class MeshAppStack extends cdk.Stack {
     mySecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
 
     // Create Fargate Service
-    new FargateService(this, 'NginxService', {
+    const nginxService = new FargateService(this, 'NginxService', {
       cluster: cluster,
       taskDefinition: taskDef,
       desiredCount: 1,
-      assignPublicIp: false,  // This ensures the Fargate task does NOT have a public IP
+      assignPublicIp: false,
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_ISOLATED
       },
       securityGroups: [mySecurityGroup]
+    });
+
+    // Create the Application Load Balancer in a public subnet
+    const loadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
+      vpc: vpc,
+      internetFacing: true,  // Makes it public
+      vpcSubnets: {
+        subnetType: SubnetType.PUBLIC
+      },
+    });
+
+    // Security Group to allow HTTP traffic to the ALB
+    const lbSecurityGroup = new SecurityGroup(this, 'LoadBalancerSecurityGroup', {
+      vpc: vpc,
+    });
+
+    lbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
+
+    // Assign the security group to ALB
+    loadBalancer.addSecurityGroup(lbSecurityGroup);
+
+    // Create a target group for the ALB pointing to the ECS service
+    const targetGroup = new ApplicationTargetGroup(this, 'EcsTargetGroup', {
+      port: 80,
+      targets: [],  // We will add our service to this target group later
+      vpc: vpc,
+      protocol: ApplicationProtocol.HTTP,
+    });
+
+    // Add an HTTP listener to the ALB on port 80
+    const listener = loadBalancer.addListener('HttpListener', {
+      port: 80,
+      open: true,
+      defaultTargetGroups: [targetGroup],
+    });
+
+    // Register the ECS service with the ALB target group
+    targetGroup.addTarget(nginxService);
+
+    // Output ALB's DNS name
+    new cdk.CfnOutput(this, 'LoadBalancerDNS', {
+      value: loadBalancer.loadBalancerDnsName,
+      description: 'The DNS Name of the Load Balancer',
     });
   }
 }
