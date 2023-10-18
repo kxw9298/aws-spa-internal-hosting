@@ -12,10 +12,10 @@ export class VpcStack extends cdk.Stack {
     // Define the VPC
     this.vpc = new Vpc(this, 'MyVpc', {
       ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/24'),
-      maxAzs: 2,
+      maxAzs: 1,
       subnetConfiguration: [
 
-        {
+        {   
           cidrMask: 28,
           name: 'Isolated',
           subnetType: SubnetType.PRIVATE_ISOLATED,
@@ -23,6 +23,11 @@ export class VpcStack extends cdk.Stack {
         {
           cidrMask: 28,
           name: 'Public',
+          subnetType: SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 28,
+          name: 'Public2',
           subnetType: SubnetType.PUBLIC,
         },
       ],
