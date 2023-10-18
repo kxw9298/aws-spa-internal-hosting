@@ -24,12 +24,7 @@ export class VpcStack extends cdk.Stack {
           cidrMask: 28,
           name: 'Public',
           subnetType: SubnetType.PUBLIC,
-        },
-        {
-          cidrMask: 28,
-          name: 'Public2',
-          subnetType: SubnetType.PUBLIC,
-        },
+        }
       ],
       natGateways: 0, // No NAT gateways required
     });
