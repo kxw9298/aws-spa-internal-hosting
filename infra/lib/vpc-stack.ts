@@ -15,7 +15,7 @@ export class VpcStack extends cdk.Stack {
       maxAzs: 2,
       subnetConfiguration: [
         {
-          cidrMask: 28,
+          cidrMask: 26,
           name: 'Public',
           subnetType: SubnetType.PUBLIC,
         }
