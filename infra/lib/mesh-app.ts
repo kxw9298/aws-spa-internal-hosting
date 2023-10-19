@@ -78,47 +78,47 @@ export class MeshAppStack extends cdk.Stack {
       securityGroups: [mySecurityGroup]
     });
 
-    // Create the Application Load Balancer in a public subnet
-    const loadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
-      vpc: vpc,
-      internetFacing: true,  // Makes it public
-      vpcSubnets: {
-        subnetType: SubnetType.PUBLIC
-      },
-    });
+    // // Create the Application Load Balancer in a public subnet
+    // const loadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
+    //   vpc: vpc,
+    //   internetFacing: true,  // Makes it public
+    //   vpcSubnets: {
+    //     subnetType: SubnetType.PUBLIC
+    //   },
+    // });
 
-    // Security Group to allow HTTP traffic to the ALB
-    const lbSecurityGroup = new SecurityGroup(this, 'LoadBalancerSecurityGroup', {
-      vpc: vpc,
-    });
+    // // Security Group to allow HTTP traffic to the ALB
+    // const lbSecurityGroup = new SecurityGroup(this, 'LoadBalancerSecurityGroup', {
+    //   vpc: vpc,
+    // });
 
-    lbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
+    // lbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
 
-    // Assign the security group to ALB
-    loadBalancer.addSecurityGroup(lbSecurityGroup);
+    // // Assign the security group to ALB
+    // loadBalancer.addSecurityGroup(lbSecurityGroup);
 
-    // Create a target group for the ALB pointing to the ECS service
-    const targetGroup = new ApplicationTargetGroup(this, 'EcsTargetGroup', {
-      port: 80,
-      targets: [],  // We will add our service to this target group later
-      vpc: vpc,
-      protocol: ApplicationProtocol.HTTP,
-    });
+    // // Create a target group for the ALB pointing to the ECS service
+    // const targetGroup = new ApplicationTargetGroup(this, 'EcsTargetGroup', {
+    //   port: 80,
+    //   targets: [],  // We will add our service to this target group later
+    //   vpc: vpc,
+    //   protocol: ApplicationProtocol.HTTP,
+    // });
 
-    // Add an HTTP listener to the ALB on port 80
-    const listener = loadBalancer.addListener('HttpListener', {
-      port: 80,
-      open: true,
-      defaultTargetGroups: [targetGroup],
-    });
+    // // Add an HTTP listener to the ALB on port 80
+    // const listener = loadBalancer.addListener('HttpListener', {
+    //   port: 80,
+    //   open: true,
+    //   defaultTargetGroups: [targetGroup],
+    // });
 
-    // Register the ECS service with the ALB target group
-    targetGroup.addTarget(nginxService);
+    // // Register the ECS service with the ALB target group
+    // targetGroup.addTarget(nginxService);
 
-    // Output ALB's DNS name
-    new cdk.CfnOutput(this, 'LoadBalancerDNS', {
-      value: loadBalancer.loadBalancerDnsName,
-      description: 'The DNS Name of the Load Balancer',
-    });
+    // // Output ALB's DNS name
+    // new cdk.CfnOutput(this, 'LoadBalancerDNS', {
+    //   value: loadBalancer.loadBalancerDnsName,
+    //   description: 'The DNS Name of the Load Balancer',
+    // });
   }
 }
