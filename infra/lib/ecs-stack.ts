@@ -12,7 +12,6 @@ import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationListener, Appl
 interface ECSStackProps extends cdk.StackProps {
   vpc: Vpc;
   nginxRepoName: string;
-  fileSystem: efs.FileSystem;
 }
 
 export class ECSStack extends cdk.Stack {
@@ -21,7 +20,108 @@ export class ECSStack extends cdk.Stack {
 
     const vpc = props.vpc;
 
-    const fileSystem = props.fileSystem;
+
+    // Security Group for the jump box
+    const jumpBoxSecurityGroup = new ec2.SecurityGroup(this, 'JumpBoxSG', {
+      vpc,
+      description: 'Allow SSH access to jump box',
+      allowAllOutbound: true,
+    });
+
+    jumpBoxSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH');
+
+    const efsSecurityGroup = new ec2.SecurityGroup(this, 'EfsSecurityGroup', {
+      vpc: vpc,
+      securityGroupName: 'efsSecurityGroup',
+      description: 'Amazon EFS walkthrough 1, SG for EC2 instance',
+      allowAllOutbound: true,  // Adjust this based on your requirements
+    });
+
+    efsSecurityGroup.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.tcp(2049), 'Allow NFS traffic from within VPC');
+    // Allow NFS traffic from EC2 security group to EFS mount target security group
+    efsSecurityGroup.addIngressRule(jumpBoxSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+
+    // Define IAM Role for the EC2 instance with S3 read permissions
+    const jumpBoxRole = new iam.Role(this, 'JumpBoxRole', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+    });
+
+    jumpBoxRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
+
+    // Create an EFS FileSystem
+    const fileSystem = new efs.FileSystem(this, 'MyEfsFileSystem', {
+      vpc,
+      // vpcSubnets: {
+      //     subnetType: ec2.SubnetType.PUBLIC, // Example: Use isolated/private subnet
+      //   },
+      lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      securityGroup: efsSecurityGroup,
+      fileSystemPolicy: new iam.PolicyDocument({
+        statements: [
+          new iam.PolicyStatement({
+            actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite", "elasticfilesystem:ClientRootAccess"],
+            effect: iam.Effect.ALLOW,
+            resources: ["*"],  // This assumes you want to allow access to any resource
+            principals: [jumpBoxRole],  // Replace with the ARN of the EC2 instance role
+          }),
+        ],
+      }),
+    });
+
+    // Mount targets in all subnets
+    fileSystem.connections.securityGroups.push(efsSecurityGroup);
+
+    jumpBoxRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
+      resources: [fileSystem.fileSystemArn],
+    }));
+
+    // Create an EFS Access Point with a specified path
+    const accessPoint = new efs.AccessPoint(this, 'EfsAccessPoint', {
+      fileSystem: fileSystem,
+      path: '/',  // Specify the path for the access point
+      createAcl: {
+        ownerGid: '1000',
+        ownerUid: '1000',
+        permissions: '755',
+      },
+      posixUser: {
+        uid: '1000',
+        gid: '1000',
+      },
+    });
+
+    const region = this.region; // Get the current stack's region
+    // Create a JumpBox
+
+    const jumpBox = new ec2.Instance(this, 'JumpBox', {
+      vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
+      role: jumpBoxRole,  // Assign the role to the EC2 instance
+      instanceType: new ec2.InstanceType('t2.micro'),
+      machineImage: new ec2.AmazonLinuxImage(),
+      securityGroup: jumpBoxSecurityGroup,
+      keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
+      userData: ec2.UserData.custom(`
+                #!/bin/bash
+                sudo yum -y install amazon-efs-utils  // Installing the EFS mount helper
+                mkdir ~/efs-mount-point
+                sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId}:/ ~/efs-mount-point
+                sudo chown ec2-user:ec2-user ~/efs-mount-point
+            `),
+    });
+
+    // Security group updates for EFS and EC2 to communicate
+    fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
+    jumpBox.connections.allowTo(fileSystem, ec2.Port.tcp(2049), 'Allow EFS access from EC2');
+
+    new cdk.CfnOutput(this, 'EFSMountPoint', {
+      value: fileSystem.fileSystemId + '.efs.us-east-1.amazonaws.com',
+      description: 'EFS Mount Endpoint',
+    });
 
     // Create the ECS Cluster
     const cluster = new Cluster(this, 'FargateCluster', {
@@ -105,6 +205,8 @@ export class ECSStack extends cdk.Stack {
 
     // Allow all inbound traffic from within the VPC
     ecsSecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
+    // Allow NFS traffic from ECS security group to EFS mount target security group
+    efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
 
     // Create Fargate Service
     const nginxService = new FargateService(this, 'NginxService', {
