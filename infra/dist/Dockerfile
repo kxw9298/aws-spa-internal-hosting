@@ -3,9 +3,9 @@ FROM nginx:alpine
 
 # Copy the SPA angular static assets to Nginx's default directory
 COPY app/ /usr/share/nginx/html
-RUN ls app/
 
 RUN ls /usr/share/nginx/html
+
 # Expose port 80
 EXPOSE 80
 
