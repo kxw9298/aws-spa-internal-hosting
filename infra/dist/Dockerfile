@@ -1,23 +1,23 @@
 # Use the Nginx image from Docker Hub as the base image
 FROM nginx
 
+RUN ls -la app/
+
 # Set the working directory inside the container
 WORKDIR /usr/share/nginx/html
 
 # Copy all files and directories from the 'app/' directory to the working directory in the container
 COPY app/ .
 
-# (Optional) Specifically list the JavaScript files to ensure they are copied
-RUN echo "Listing JavaScript files:" && ls -la *.js
-
-# (Optional) You could also list all contents to verify everything got copied correctly
-RUN echo "Listing all files:" && ls -la
+# List all contents of the current directory to verify what is being copied
+RUN ls -la
 
 # Expose port 80 to allow external access to the Nginx server
 EXPOSE 80
 
 # Start the Nginx server
 CMD ["nginx", "-g", "daemon off;"]
+
 
 
 # # Use the Nginx image from Docker Hub as the base image
