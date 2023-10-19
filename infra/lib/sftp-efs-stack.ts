@@ -131,11 +131,11 @@ export class SftpEfsStack extends cdk.Stack {
             securityGroup: jumpBoxSecurityGroup,
             keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
             userData: ec2.UserData.custom(`
-              #!/bin/bash
-              sudo yum -y install nfs-utils
-              mkdir ~/efs-mount-point
-              sudo mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${fileSystem.fileSystemId}.efs.${region}.amazonaws.com:/ ~/efs-mount-point 
-              sudo chown ec2-user:ec2-user ~/efs-mount-point
+                #!/bin/bash
+                sudo yum -y install amazon-efs-utils  // Installing the EFS mount helper
+                mkdir ~/efs-mount-point
+                sudo mount -t efs ${fileSystem.fileSystemId}:/ ~/efs-mount-point -o iam  // Using the -o iam option
+                sudo chown ec2-user:ec2-user ~/efs-mount-point
             `),
         });
 
