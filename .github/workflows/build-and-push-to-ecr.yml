@@ -38,3 +38,6 @@ jobs:
 
         # Push the commit hash tag
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:${GITHUB_SHA:0:7}
+
+        # Push the commit hash tag
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:0.0.1
