@@ -12,14 +12,8 @@ export class VpcStack extends cdk.Stack {
     // Define the VPC
     this.vpc = new Vpc(this, 'MyVpc', {
       ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/24'),
-      maxAzs: 1,
+      maxAzs: 2,
       subnetConfiguration: [
-
-        {   
-          cidrMask: 28,
-          name: 'Isolated',
-          subnetType: SubnetType.PRIVATE_ISOLATED,
-        },
         {
           cidrMask: 28,
           name: 'Public',
@@ -54,10 +48,12 @@ export class VpcStack extends cdk.Stack {
       vpc: this.vpc,
     });
 
-    // Create the VPC Endpoint for S3
-    // new ec2.GatewayVpcEndpoint(this, 'S3VpcEndpoint', {
-    //   service: ec2.GatewayVpcEndpointAwsService.S3,
-    //   vpc: this.vpc
-    // });
+    // Creating a VPC endpoint for CloudWatch Logs
+    new ec2.InterfaceVpcEndpoint(this, 'CloudWatchLogsEndpoint', {
+      vpc: this.vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+      privateDnsEnabled: true, // Default is true
+    });
+
   }
 }

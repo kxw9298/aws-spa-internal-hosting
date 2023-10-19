@@ -91,6 +91,8 @@ export class SftpEfsStack extends cdk.Stack {
               },
         });
 
+        /**
+         * 
         // SFTP user's role
         const sftpRole = new iam.Role(this, 'SftpRole', {
             assumedBy: new iam.ServicePrincipal('transfer.amazonaws.com'),
@@ -118,6 +120,15 @@ export class SftpEfsStack extends cdk.Stack {
 
         sftpUser.node.addDependency(sftpServer);
 
+        // Outputs
+         new cdk.CfnOutput(this, 'SftpEndpoint', {
+            value: sftpServer.attrServerId + '.server.transfer.amazonaws.com',
+            description: 'SFTP Endpoint',
+        });
+        
+        *
+        */
+
         const region = this.region; // Get the current stack's region
         // Create a JumpBox
         const jumpBox = new ec2.Instance(this, 'JumpBox', {
@@ -142,12 +153,6 @@ export class SftpEfsStack extends cdk.Stack {
         // Security group updates for EFS and EC2 to communicate
         fileSystem.connections.allowFrom(jumpBox, ec2.Port.tcp(2049), 'Allow NFS from JumpBox');
         jumpBox.connections.allowTo(fileSystem, ec2.Port.tcp(2049), 'Allow EFS access from EC2');
-
-         // Outputs
-         new cdk.CfnOutput(this, 'SftpEndpoint', {
-            value: sftpServer.attrServerId + '.server.transfer.amazonaws.com',
-            description: 'SFTP Endpoint',
-        });
 
         new cdk.CfnOutput(this, 'EFSMountPoint', {
             value: fileSystem.fileSystemId + '.efs.us-east-1.amazonaws.com',

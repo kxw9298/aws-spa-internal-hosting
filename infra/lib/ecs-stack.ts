@@ -47,18 +47,19 @@ export class ECSStack extends cdk.Stack {
       taskRole: ecsTaskRole,
       // ... other properties ...
     });
-
-    taskDef.addVolume({
-      name: 'efs',
-      efsVolumeConfiguration: {
-        fileSystemId: fileSystem.fileSystemId,
-      },
-    });
+    
+    // add this later
+    // taskDef.addVolume({
+    //   name: 'efs',
+    //   efsVolumeConfiguration: {
+    //     fileSystemId: fileSystem.fileSystemId,
+    //   },
+    // });
 
     const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
 
     const container = taskDef.addContainer('NginxContainer', {
-      image: ContainerImage.fromEcrRepository(nginxRepo, 'latest'),
+      image: ContainerImage.fromEcrRepository(nginxRepo, '87c3a0e'),
       memoryLimitMiB: 512,
       environment: {
         // This environment variable specifies the directory in EFS where Angular SPA assets are located
@@ -69,12 +70,13 @@ export class ECSStack extends cdk.Stack {
     container.addPortMappings({
       containerPort: 80,
     });
-
-    container.addMountPoints({
-      containerPath: '/mnt/efs',  // Mounting the root of EFS, the specified path in APP_DIR will be used to fetch assets
-      sourceVolume: 'efs',
-      readOnly: true,
-    });
+    
+    // add this later
+    // container.addMountPoints({
+    //   containerPath: '/mnt/efs',  // Mounting the root of EFS, the specified path in APP_DIR will be used to fetch assets
+    //   sourceVolume: 'efs',
+    //   readOnly: true,
+    // });
 
     const ecsSecurityGroup = new SecurityGroup(this, 'ecsSecurityGroup', {
       vpc: vpc,
@@ -97,48 +99,48 @@ export class ECSStack extends cdk.Stack {
       securityGroups: [ecsSecurityGroup]
     });
 
-    // // Create the Application Load Balancer in a public subnet
-    // const loadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
-    //   vpc: vpc,
-    //   internetFacing: true,  // Makes it public
-    //   vpcSubnets: {
-    //     subnetType: SubnetType.PUBLIC
-    //   },
-    // });
+    // Create the Application Load Balancer in a public subnet
+    const loadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
+      vpc: vpc,
+      internetFacing: true,  // Makes it public
+      vpcSubnets: {
+        subnetType: SubnetType.PUBLIC
+      },
+    });
 
-    // // Security Group to allow HTTP traffic to the ALB
-    // const lbSecurityGroup = new SecurityGroup(this, 'LoadBalancerSecurityGroup', {
-    //   vpc: vpc,
-    // });
+    // Security Group to allow HTTP traffic to the ALB
+    const lbSecurityGroup = new SecurityGroup(this, 'LoadBalancerSecurityGroup', {
+      vpc: vpc,
+    });
 
-    // lbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
+    lbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
 
-    // // Assign the security group to ALB
-    // loadBalancer.addSecurityGroup(lbSecurityGroup);
+    // Assign the security group to ALB
+    loadBalancer.addSecurityGroup(lbSecurityGroup);
 
-    // // Create a target group for the ALB pointing to the ECS service
-    // const targetGroup = new ApplicationTargetGroup(this, 'EcsTargetGroup', {
-    //   port: 80,
-    //   targets: [],  // We will add our service to this target group later
-    //   vpc: vpc,
-    //   protocol: ApplicationProtocol.HTTP,
-    // });
+    // Create a target group for the ALB pointing to the ECS service
+    const targetGroup = new ApplicationTargetGroup(this, 'EcsTargetGroup', {
+      port: 80,
+      targets: [],  // We will add our service to this target group later
+      vpc: vpc,
+      protocol: ApplicationProtocol.HTTP,
+    });
 
-    // // Add an HTTP listener to the ALB on port 80
-    // const listener = loadBalancer.addListener('HttpListener', {
-    //   port: 80,
-    //   open: true,
-    //   defaultTargetGroups: [targetGroup],
-    // });
+    // Add an HTTP listener to the ALB on port 80
+    const listener = loadBalancer.addListener('HttpListener', {
+      port: 80,
+      open: true,
+      defaultTargetGroups: [targetGroup],
+    });
 
-    // // Register the ECS service with the ALB target group
-    // targetGroup.addTarget(nginxService);
+    // Register the ECS service with the ALB target group
+    targetGroup.addTarget(nginxService);
 
-    // // Output ALB's DNS name
-    // new cdk.CfnOutput(this, 'LoadBalancerDNS', {
-    //   value: loadBalancer.loadBalancerDnsName,
-    //   description: 'The DNS Name of the Load Balancer',
-    // });
+    // Output ALB's DNS name
+    new cdk.CfnOutput(this, 'LoadBalancerDNS', {
+      value: loadBalancer.loadBalancerDnsName,
+      description: 'The DNS Name of the Load Balancer',
+    });
   }
 
 }
