@@ -1,26 +1,15 @@
-# Use the Nginx image from Docker Hub as the base image
-FROM nginx
+# Use Nginx as base image
+FROM nginx:alpine
 
-RUN ls -la
+# Copy the SPA angular static assets to Nginx's default directory
+COPY app/ /usr/share/nginx/html
+RUN ls app/
 
-RUN ls -la app/
-
-# Set the working directory inside the container
-WORKDIR /usr/share/nginx/html
-
-# Copy all files and directories from the 'app/' directory to the working directory in the container
-COPY app/ .
-
-# List all contents of the current directory to verify what is being copied
-RUN ls -la
-
-# Expose port 80 to allow external access to the Nginx server
+RUN ls /usr/share/nginx/html
+# Expose port 80
 EXPOSE 80
 
-# Start the Nginx server
 CMD ["nginx", "-g", "daemon off;"]
-
-
 
 # # Use the Nginx image from Docker Hub as the base image
 # FROM nginx
