@@ -42,9 +42,30 @@ export class ECSStack extends cdk.Stack {
       resources: ['*'], // You might want to scope this down
     }));
 
+    const ecsExecutionRole = new iam.Role(this, 'ECSExecutionRole', {
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    });
+
+    ecsExecutionRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite'],
+      resources: ['*'], // You might want to scope this down
+    }));
+
+    ecsExecutionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
+
+    // Explicitly adding permissions to pull images from ECR
+    ecsExecutionRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage"
+      ],
+      resources: ["*"], // specify your ECR repository ARN here if needed
+    }));
     // Define the Fargate Task
     const taskDef = new FargateTaskDefinition(this, 'NginxTask', {
       taskRole: ecsTaskRole,
+      executionRole: ecsExecutionRole,
       // ... other properties ...
     });
 
