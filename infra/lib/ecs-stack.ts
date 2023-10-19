@@ -6,6 +6,7 @@ import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from '
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationListener, ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 interface ECSStackProps extends cdk.StackProps {
@@ -21,6 +22,8 @@ export class ECSStack extends cdk.Stack {
     const vpc = props.vpc;
 
     const fileSystem = props.fileSystem;
+
+    const fileSystemSGs = fileSystem.connections.securityGroups;
 
     // Create the ECS Cluster
     const cluster = new Cluster(this, 'FargateCluster', {
@@ -75,14 +78,29 @@ export class ECSStack extends cdk.Stack {
       readOnly: true,
     });
 
-    const mySecurityGroup = new SecurityGroup(this, 'MySecurityGroup', {
+    const ecsSecurityGroup = new SecurityGroup(this, 'ecsSecurityGroup', {
       vpc: vpc,
       description: 'Allow all inbound traffic from within VPC',
       allowAllOutbound: true,  // default
     });
 
     // Allow all inbound traffic from within the VPC
-    mySecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
+    ecsSecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
+
+
+    if (fileSystemSGs.length > 0) {
+
+      const efsSecurityGroup = fileSystemSGs[0];
+
+      // Allow ECS Security Group to make outbound connections to NFS port 2049
+      ecsSecurityGroup.addEgressRule(efsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS outbound');
+
+      // Allow EFS Security Group to accept inbound connections on port 2049 from ECS Security Group
+      efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS inbound');
+
+    }
+
+
 
     // Create Fargate Service
     const nginxService = new FargateService(this, 'NginxService', {
@@ -93,7 +111,7 @@ export class ECSStack extends cdk.Stack {
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_ISOLATED
       },
-      securityGroups: [mySecurityGroup]
+      securityGroups: [ecsSecurityGroup]
     });
 
     // // Create the Application Load Balancer in a public subnet
@@ -139,4 +157,5 @@ export class ECSStack extends cdk.Stack {
     //   description: 'The DNS Name of the Load Balancer',
     // });
   }
+
 }
