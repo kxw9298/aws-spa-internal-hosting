@@ -49,7 +49,7 @@ export class MeshAppStack extends cdk.Stack {
     const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
 
     const container = taskDef.addContainer('NginxContainer', {
-      image: ContainerImage.fromEcrRepository(nginxRepo, '355cbf8'),
+      image: ContainerImage.fromEcrRepository(nginxRepo, 'latest'),
       memoryLimitMiB: 512,
     });
 
