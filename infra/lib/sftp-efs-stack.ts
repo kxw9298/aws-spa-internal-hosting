@@ -104,6 +104,7 @@ export class SftpEfsStack extends cdk.Stack {
             endpointType: 'PUBLIC',
             identityProviderType: 'SERVICE_MANAGED',
             protocols: ['SFTP'],
+            domain: 'EFS', // Specify EFS as the domain
         });
 
         // Create an SFTP user with EFS as the home directory
