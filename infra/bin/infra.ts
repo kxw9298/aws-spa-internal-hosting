@@ -18,10 +18,10 @@ const ecrStack = new ECRStack(app, 'MyECRStack');
 
 const sftpEfsStack = new SftpEfsStack(app, 'MySftpEfsStack', { vpc: vpcStack.vpc });
 
-const ecsStack = new ECSStack(app, 'MyECSStack', {
-  vpc: vpcStack.vpc,
-  nginxRepoName: ecrStack.nginxRepo.repositoryName,
-  fileSystem: sftpEfsStack.fileSystem
-}
-)
-ecsStack.addDependency(sftpEfsStack);
+// const ecsStack = new ECSStack(app, 'MyECSStack', {
+//   vpc: vpcStack.vpc,
+//   nginxRepoName: ecrStack.nginxRepo.repositoryName,
+//   fileSystem: sftpEfsStack.fileSystem
+// }
+// )
+// ecsStack.addDependency(sftpEfsStack);

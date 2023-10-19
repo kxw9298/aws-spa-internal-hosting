@@ -23,8 +23,6 @@ export class ECSStack extends cdk.Stack {
 
     const fileSystem = props.fileSystem;
 
-    const fileSystemSGs = fileSystem.connections.securityGroups;
-
     // Create the ECS Cluster
     const cluster = new Cluster(this, 'FargateCluster', {
       vpc: vpc
@@ -86,21 +84,6 @@ export class ECSStack extends cdk.Stack {
 
     // Allow all inbound traffic from within the VPC
     ecsSecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
-
-
-    if (fileSystemSGs.length > 0) {
-
-      const efsSecurityGroup = fileSystemSGs[0];
-
-      // Allow ECS Security Group to make outbound connections to NFS port 2049
-      ecsSecurityGroup.addEgressRule(efsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS outbound');
-
-      // Allow EFS Security Group to accept inbound connections on port 2049 from ECS Security Group
-      efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS inbound');
-
-    }
-
-
 
     // Create Fargate Service
     const nginxService = new FargateService(this, 'NginxService', {
