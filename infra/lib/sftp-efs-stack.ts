@@ -134,7 +134,7 @@ export class SftpEfsStack extends cdk.Stack {
                 #!/bin/bash
                 sudo yum -y install amazon-efs-utils  // Installing the EFS mount helper
                 mkdir ~/efs-mount-point
-                sudo mount -t efs ${fileSystem.fileSystemId}:/ ~/efs-mount-point -o iam  // Using the -o iam option
+                sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId}:/ ~/efs-mount-point
                 sudo chown ec2-user:ec2-user ~/efs-mount-point
             `),
         });
