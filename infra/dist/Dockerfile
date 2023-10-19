@@ -1,6 +1,8 @@
 # Use the Nginx image from Docker Hub as the base image
 FROM nginx
 
+RUN ls -la
+
 RUN ls -la app/
 
 # Set the working directory inside the container
