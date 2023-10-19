@@ -94,7 +94,7 @@ export class ECSStack extends cdk.Stack {
       desiredCount: 1,
       assignPublicIp: false,
       vpcSubnets: {
-        subnetType: SubnetType.PRIVATE_ISOLATED
+        subnetType: SubnetType.PUBLIC
       },
       securityGroups: [ecsSecurityGroup]
     });
