@@ -4,20 +4,23 @@ import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from '
 import { Construct } from 'constructs';
 import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as efs from 'aws-cdk-lib/aws-efs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationListener, ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
-interface MeshAppStackProps extends cdk.StackProps {
+interface ECSStackProps extends cdk.StackProps {
   vpc: Vpc;
   nginxRepoName: string;
-  bucket: s3.IBucket;
+  fileSystem: efs.FileSystem;
 }
 
-export class MeshAppStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: MeshAppStackProps) {
+export class ECSStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: ECSStackProps) {
     super(scope, id, props);
 
     const vpc = props.vpc;
+
+    const fileSystem = props.fileSystem;
 
     // Create the ECS Cluster
     const cluster = new Cluster(this, 'FargateCluster', {
@@ -32,13 +35,11 @@ export class MeshAppStack extends cdk.Stack {
     // Attach the AWS managed policy for task execution
     ecsTaskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
 
-    const bucketPolicy = new PolicyStatement({
-      actions: ['s3:GetObject', 's3:ListBucket'],
-      resources: [props.bucket.bucketArn, props.bucket.arnForObjects('*')],
-      effect: Effect.ALLOW,
-    });
-
-    ecsTaskRole.addToPolicy(bucketPolicy);
+    // Add permissions as necessary
+    ecsTaskRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite'],
+      resources: ['*'], // You might want to scope this down
+    }));
 
     // Define the Fargate Task
     const taskDef = new FargateTaskDefinition(this, 'NginxTask', {
@@ -46,15 +47,32 @@ export class MeshAppStack extends cdk.Stack {
       // ... other properties ...
     });
 
+    taskDef.addVolume({
+      name: 'efs',
+      efsVolumeConfiguration: {
+        fileSystemId: fileSystem.fileSystemId,
+      },
+    });
+
     const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
 
     const container = taskDef.addContainer('NginxContainer', {
       image: ContainerImage.fromEcrRepository(nginxRepo, 'latest'),
       memoryLimitMiB: 512,
+      environment: {
+        // This environment variable specifies the directory in EFS where Angular SPA assets are located
+        APP_DIR: '/mnt/efs/app',
+      },
     });
 
     container.addPortMappings({
       containerPort: 80,
+    });
+
+    container.addMountPoints({
+      containerPath: '/mnt/efs',  // Mounting the root of EFS, the specified path in APP_DIR will be used to fetch assets
+      sourceVolume: 'efs',
+      readOnly: true,
     });
 
     const mySecurityGroup = new SecurityGroup(this, 'MySecurityGroup', {

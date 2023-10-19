@@ -4,7 +4,7 @@ import { App } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
 import { S3Stack } from "../lib/s3-stack";
-import { MeshAppStack } from '../lib/mesh-app';
+import { ECSStack } from '../lib/ecs-stack';
 import { ECRStack } from '../lib/ecr-stack';
 import { SftpEfsStack } from '../lib/sftp-efs-stack';
 
@@ -16,11 +16,11 @@ const vpcStack = new VpcStack(app, 'MyVpcStack');
 
 const ecrStack = new ECRStack(app, 'MyECRStack');
 
-const meshAppStack = new MeshAppStack(app, 'MeshAppStack', {
+const sftpEfsStack = new SftpEfsStack(app, 'MySftpEfsStack', { vpc: vpcStack.vpc });
+
+const meshAppStack = new ECSStack(app, 'MyECSStack', {
   vpc: vpcStack.vpc,
   nginxRepoName: ecrStack.nginxRepo.repositoryName,
-  bucket: s3Stack.bucket
+  fileSystem: sftpEfsStack.fileSystem
 }
 )
-
-const sftpEfsStack = new SftpEfsStack(app, 'MySftpEfsStack', { vpc: vpcStack.vpc });

@@ -1,11 +1,10 @@
-# Use the official Nginx image as a base
-FROM nginx:alpine
+FROM nginx
 
-# Copy the SPA angular static assets to Nginx's default directory
-COPY app/ /usr/share/nginx/html
+# Remove default Nginx content
+RUN rm -rf /usr/share/nginx/html/*
 
-# Expose port 80
-EXPOSE 80
+# Copy the start script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-CMD ["nginx", "-g", "daemon off;"]
-
+CMD ["/start.sh"]
