@@ -47,14 +47,13 @@ export class ECSStack extends cdk.Stack {
       taskRole: ecsTaskRole,
       // ... other properties ...
     });
-    
-    // add this later
-    // taskDef.addVolume({
-    //   name: 'efs',
-    //   efsVolumeConfiguration: {
-    //     fileSystemId: fileSystem.fileSystemId,
-    //   },
-    // });
+
+    taskDef.addVolume({
+      name: 'efs',
+      efsVolumeConfiguration: {
+        fileSystemId: fileSystem.fileSystemId,
+      },
+    });
 
     const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
 
@@ -70,13 +69,12 @@ export class ECSStack extends cdk.Stack {
     container.addPortMappings({
       containerPort: 80,
     });
-    
-    // add this later
-    // container.addMountPoints({
-    //   containerPath: '/mnt/efs',  // Mounting the root of EFS, the specified path in APP_DIR will be used to fetch assets
-    //   sourceVolume: 'efs',
-    //   readOnly: true,
-    // });
+
+    container.addMountPoints({
+      containerPath: '/mnt/efs',  // Mounting the root of EFS, the specified path in APP_DIR will be used to fetch assets
+      sourceVolume: 'efs',
+      readOnly: true,
+    });
 
     const ecsSecurityGroup = new SecurityGroup(this, 'ecsSecurityGroup', {
       vpc: vpc,
