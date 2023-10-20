@@ -207,6 +207,8 @@ export class ECSStack extends cdk.Stack {
     ecsSecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
     // Allow NFS traffic from ECS security group to EFS mount target security group
     efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+    // allow outbound connections on port 2049 to Amazon EFS file system's security group
+    ecsSecurityGroup.addEgressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
 
     // Create Fargate Service
     const nginxService = new FargateService(this, 'NginxService', {
