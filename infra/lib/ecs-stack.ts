@@ -39,7 +39,7 @@ export class ECSStack extends cdk.Stack {
 
     efsSecurityGroup.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.tcp(2049), 'Allow NFS traffic from within VPC');
     // Allow NFS traffic from EC2 security group to EFS mount target security group
-    efsSecurityGroup.addIngressRule(jumpBoxSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+    efsSecurityGroup.addIngressRule(jumpBoxSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 jumpbox instance');
 
     // Define IAM Role for the EC2 instance with S3 read permissions
     const jumpBoxRole = new iam.Role(this, 'JumpBoxRole', {
@@ -204,9 +204,10 @@ export class ECSStack extends cdk.Stack {
     // Allow all inbound traffic from within the VPC
     ecsSecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
     // Allow NFS traffic from ECS security group to EFS mount target security group
-    efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+    efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from ECS SG');
     // allow outbound connections on port 2049 to Amazon EFS file system's security group
-    ecsSecurityGroup.addEgressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+    ecsSecurityGroup.addEgressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic to EFS SG');
+    ecsSecurityGroup.addIngressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic to ECS SG');
 
     // Mount targets in all subnets
     fileSystem.connections.securityGroups.push(efsSecurityGroup);
