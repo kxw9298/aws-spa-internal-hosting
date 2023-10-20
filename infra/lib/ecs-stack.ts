@@ -69,9 +69,7 @@ export class ECSStack extends cdk.Stack {
       }),
     });
 
-    // Mount targets in all subnets
-    fileSystem.connections.securityGroups.push(efsSecurityGroup);
-
+    
     jumpBoxRole.addToPolicy(new iam.PolicyStatement({
       actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
       resources: [fileSystem.fileSystemArn],
@@ -138,7 +136,7 @@ export class ECSStack extends cdk.Stack {
 
     // Add permissions as necessary
     ecsTaskRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite'],
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
       resources: ['*'], // You might want to scope this down
     }));
 
@@ -147,7 +145,7 @@ export class ECSStack extends cdk.Stack {
     });
 
     ecsExecutionRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite'],
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
       resources: ['*'], // You might want to scope this down
     }));
 
@@ -209,6 +207,9 @@ export class ECSStack extends cdk.Stack {
     efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
     // allow outbound connections on port 2049 to Amazon EFS file system's security group
     ecsSecurityGroup.addEgressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic from EC2 instance');
+
+    // Mount targets in all subnets
+    fileSystem.connections.securityGroups.push(efsSecurityGroup);
 
     // Create Fargate Service
     const nginxService = new FargateService(this, 'NginxService', {
