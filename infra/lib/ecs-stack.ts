@@ -51,27 +51,24 @@ export class ECSStack extends cdk.Stack {
     // Create an EFS FileSystem
     const fileSystem = new efs.FileSystem(this, 'MyEfsFileSystem', {
       vpc,
-      // vpcSubnets: {
-      //     subnetType: ec2.SubnetType.PUBLIC, // Example: Use isolated/private subnet
-      //   },
       lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       securityGroup: efsSecurityGroup,
-      fileSystemPolicy: new iam.PolicyDocument({
-        statements: [
-          new iam.PolicyStatement({
-            actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite", "elasticfilesystem:ClientRootAccess"],
-            effect: iam.Effect.ALLOW,
-            resources: ["*"],  // This assumes you want to allow access to any resource
-            principals: [jumpBoxRole],  // Replace with the ARN of the EC2 instance role
-          }),
-        ],
-      }),
+      // fileSystemPolicy: new iam.PolicyDocument({
+      //   statements: [
+      //     new iam.PolicyStatement({
+      //       actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite", "elasticfilesystem:ClientRootAccess"],
+      //       effect: iam.Effect.ALLOW,
+      //       resources: ["*"],  // This assumes you want to allow access to any resource
+      //       principals: [jumpBoxRole],  // Replace with the ARN of the EC2 instance role
+      //     }),
+      //   ],
+      // }),
     });
 
     
     jumpBoxRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess', 'elasticfilesystem:DescribeMountTargets', 'elasticfilesystem:DescribeFileSystems'],
       resources: [fileSystem.fileSystemArn],
     }));
 
@@ -136,7 +133,7 @@ export class ECSStack extends cdk.Stack {
 
     // Add permissions as necessary
     ecsTaskRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess', 'elasticfilesystem:DescribeMountTargets', 'elasticfilesystem:DescribeFileSystems'],
       resources: ['*'], // You might want to scope this down
     }));
 
