@@ -142,7 +142,7 @@ export class ECSStack extends cdk.Stack {
     });
 
     ecsExecutionRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess'],
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess','elasticfilesystem:DescribeMountTargets', 'elasticfilesystem:DescribeFileSystems'],
       resources: ['*'], // You might want to scope this down
     }));
 
