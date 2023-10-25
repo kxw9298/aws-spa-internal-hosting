@@ -1,16 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
-import { Vpc, SubnetType, SecurityGroup, Peer, Port } from 'aws-cdk-lib/aws-ec2';
-import { Cluster, FargateTaskDefinition, ContainerImage, FargateService } from 'aws-cdk-lib/aws-ecs';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
-import { Role, ServicePrincipal, ManagedPolicy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationListener, ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { aws_logs as logs } from 'aws-cdk-lib';
+import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 interface ECSStackProps extends cdk.StackProps {
-  vpc: Vpc;
+  vpc: ec2.Vpc;
   nginxRepoName: string;
 }
 
@@ -123,17 +122,17 @@ export class ECSStack extends cdk.Stack {
     });
 
     // Create the ECS Cluster
-    const cluster = new Cluster(this, 'FargateCluster', {
+    const cluster = new ecs.Cluster(this, 'FargateCluster', {
       vpc: vpc
     });
 
     // Define the ECS task role
-    const ecsTaskRole = new Role(this, 'ECSTaskRole', {
-      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
+    const ecsTaskRole = new iam.Role(this, 'ECSTaskRole', {
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com')
     });
 
     // Attach the AWS managed policy for task execution
-    ecsTaskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
+    ecsTaskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
 
     // Add permissions as necessary
     ecsTaskRole.addToPolicy(new iam.PolicyStatement({
@@ -161,11 +160,13 @@ export class ECSStack extends cdk.Stack {
       ],
       resources: ["*"], // specify your ECR repository ARN here if needed
     }));
+
     // Define the Fargate Task
-    const taskDef = new FargateTaskDefinition(this, 'NginxTask', {
+    const taskDef = new ecs.FargateTaskDefinition(this, 'NginxTask', {
       taskRole: ecsTaskRole,
       executionRole: ecsExecutionRole,
       // ... other properties ...
+
     });
 
     taskDef.addVolume({
@@ -177,13 +178,20 @@ export class ECSStack extends cdk.Stack {
 
     const nginxRepo = ecr.Repository.fromRepositoryName(this, 'NginxRepo', props.nginxRepoName);
 
+    // Define the CloudWatch Logs Group
+    const logGroup = new logs.LogGroup(this, 'MyECSLogGroup');
+
     const container = taskDef.addContainer('NginxContainer', {
-      image: ContainerImage.fromEcrRepository(nginxRepo, '6fda398'),
+      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'edab8cb'),
       memoryLimitMiB: 512,
       environment: {
         // This environment variable specifies the directory in EFS where Angular SPA assets are located
         APP_DIR: '/mnt/efs/app',
       },
+      logging: new ecs.AwsLogDriver({
+        streamPrefix: 'MyECSContainer',
+        logGroup: logGroup,
+      }),
     });
 
     container.addPortMappings({
@@ -196,14 +204,14 @@ export class ECSStack extends cdk.Stack {
       readOnly: true,
     });
 
-    const ecsSecurityGroup = new SecurityGroup(this, 'ecsSecurityGroup', {
+    const ecsSecurityGroup = new ec2.SecurityGroup(this, 'ecsSecurityGroup', {
       vpc: vpc,
       description: 'Allow all inbound traffic from within VPC',
       allowAllOutbound: true,  // default
     });
 
     // Allow all inbound traffic from within the VPC
-    ecsSecurityGroup.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.allTraffic());
+    ecsSecurityGroup.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.allTraffic());
     // Allow NFS traffic from ECS security group to EFS mount target security group
     efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from ECS SG');
     // allow outbound connections on port 2049 to Amazon EFS file system's security group
@@ -214,42 +222,42 @@ export class ECSStack extends cdk.Stack {
     fileSystem.connections.securityGroups.push(efsSecurityGroup);
 
     // Create Fargate Service
-    const nginxService = new FargateService(this, 'NginxService', {
+    const nginxService = new ecs.FargateService(this, 'NginxService', {
       cluster: cluster,
       taskDefinition: taskDef,
       desiredCount: 1,
       assignPublicIp: false,
       vpcSubnets: {
-        subnetType: SubnetType.PUBLIC
+        subnetType: ec2.SubnetType.PUBLIC
       },
       securityGroups: [ecsSecurityGroup]
     });
 
     // Create the Application Load Balancer in a public subnet
-    const loadBalancer = new ApplicationLoadBalancer(this, 'ALB', {
+    const loadBalancer = new elb.ApplicationLoadBalancer(this, 'ALB', {
       vpc: vpc,
       internetFacing: true,  // Makes it public
       vpcSubnets: {
-        subnetType: SubnetType.PUBLIC
+        subnetType: ec2.SubnetType.PUBLIC
       },
     });
 
     // Security Group to allow HTTP traffic to the ALB
-    const lbSecurityGroup = new SecurityGroup(this, 'LoadBalancerSecurityGroup', {
+    const lbSecurityGroup = new ec2.SecurityGroup(this, 'LoadBalancerSecurityGroup', {
       vpc: vpc,
     });
 
-    lbSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
+    lbSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP traffic from anywhere');
 
     // Assign the security group to ALB
     loadBalancer.addSecurityGroup(lbSecurityGroup);
 
     // Create a target group for the ALB pointing to the ECS service
-    const targetGroup = new ApplicationTargetGroup(this, 'EcsTargetGroup', {
+    const targetGroup = new elb.ApplicationTargetGroup(this, 'EcsTargetGroup', {
       port: 80,
       targets: [],  // We will add our service to this target group later
       vpc: vpc,
-      protocol: ApplicationProtocol.HTTP,
+      protocol: elb.ApplicationProtocol.HTTP,
     });
 
     // Add an HTTP listener to the ALB on port 80
