@@ -182,7 +182,7 @@ export class ECSStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, 'MyECSLogGroup');
 
     const container = taskDef.addContainer('NginxContainer', {
-      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'edab8cb'),
+      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'cd2ed86'),
       memoryLimitMiB: 512,
       environment: {
         // This environment variable specifies the directory in EFS where Angular SPA assets are located
