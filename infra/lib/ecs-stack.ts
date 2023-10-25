@@ -54,26 +54,22 @@ export class ECSStack extends cdk.Stack {
       lifecyclePolicy: efs.LifecyclePolicy.AFTER_7_DAYS,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       securityGroup: efsSecurityGroup,
+      fileSystemPolicy: new iam.PolicyDocument({
+        statements: [
+          new iam.PolicyStatement({
+            actions: ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite", "elasticfilesystem:ClientRootAccess"],
+            effect: iam.Effect.ALLOW,
+            resources: ["*"],  // This assumes you want to allow access to any resource
+            principals: [new iam.ArnPrincipal('*')],
+            conditions: {
+              Bool: {
+                "elasticfilesystem:AccessedViaMountTarget": "true"
+              }
+            }
+          }),
+        ],
+      }),
     });
-
-    const efsPolicyStatement = new iam.PolicyStatement({
-      sid: 'efs',
-      effect: iam.Effect.ALLOW,
-      principals: [new iam.ArnPrincipal('*')],
-      actions: [
-        "elasticfilesystem:ClientRootAccess",
-        "elasticfilesystem:ClientWrite",
-        "elasticfilesystem:ClientMount"
-      ],
-      resources: [fileSystem.fileSystemArn],
-      conditions: {
-        Bool: {
-          "elasticfilesystem:AccessedViaMountTarget": "true"
-        }
-      }
-    });
-
-    fileSystem.addToResourcePolicy(efsPolicyStatement);
 
     jumpBoxRole.addToPolicy(new iam.PolicyStatement({
       actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess', 'elasticfilesystem:DescribeMountTargets', 'elasticfilesystem:DescribeFileSystems'],
