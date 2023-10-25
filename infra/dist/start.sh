@@ -6,6 +6,10 @@ if [ -z "$APP_DIR" ]; then
     APP_DIR="/app"
 fi
 
+# Echo the content of the APP_DIR
+echo "Listing content of $APP_DIR:"
+ls -al $APP_DIR
+
 # Copy assets from EFS to Nginx directory
 cp -r $APP_DIR/* /usr/share/nginx/html/
 
