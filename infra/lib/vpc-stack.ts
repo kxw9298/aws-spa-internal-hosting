@@ -55,5 +55,12 @@ export class VpcStack extends cdk.Stack {
       privateDnsEnabled: true, // Default is true
     });
 
+    // Creating a VPC endpoint for Secret Manager
+    new ec2.InterfaceVpcEndpoint(this, 'secretManagerEndpoint', {
+      vpc: this.vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      privateDnsEnabled: true, // Default is true
+    });
+
   }
 }

@@ -183,10 +183,11 @@ export class ECSStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, 'MyECSLogGroup');
 
     // Import the secret ARN exported by the other stack
-    // Import the secret ARN exported by the other stack
     const sslCertSecretArn = cdk.Fn.importValue('SslCertSecretArn');
     const sslCertSecret = sm.Secret.fromSecretCompleteArn(this, 'ImportedSecret', sslCertSecretArn);
-
+    
+    sslCertSecret.grantRead(ecsExecutionRole);
+    sslCertSecret.grantRead(ecsTaskRole);
 
     const container = taskDef.addContainer('NginxContainer', {
       image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'cd2ed86'),
@@ -206,7 +207,7 @@ export class ECSStack extends cdk.Stack {
     });
 
     container.addPortMappings({
-      containerPort: 80,
+      containerPort: 443,
     });
 
     container.addMountPoints({
@@ -259,13 +260,14 @@ export class ECSStack extends cdk.Stack {
     });
 
     lbSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP traffic from anywhere');
+    lbSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS traffic from anywhere');
 
     // Assign the security group to ALB
     loadBalancer.addSecurityGroup(lbSecurityGroup);
 
     // Create a target group for the ALB pointing to the ECS service
     const targetGroup = new elb.ApplicationTargetGroup(this, 'EcsTargetGroup', {
-      port: 80,
+      port: 443,
       targets: [],  // We will add our service to this target group later
       vpc: vpc,
       protocol: elb.ApplicationProtocol.HTTP,
