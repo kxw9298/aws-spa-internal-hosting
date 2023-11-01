@@ -8,17 +8,8 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
+# Custom Nginx configuration that uses SSL certificates
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 CMD ["/start.sh"]
 
-# # Use Nginx as base image
-# FROM nginx:alpine
-
-# # Copy the SPA angular static assets to Nginx's default directory
-# COPY app/ /usr/share/nginx/html
-
-# RUN ls /usr/share/nginx/html
-
-# # Expose port 80
-# EXPOSE 80
-
-# CMD ["nginx", "-g", "daemon off;"]
