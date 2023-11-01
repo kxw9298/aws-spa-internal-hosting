@@ -19,11 +19,13 @@ const ecrStack = new ECRStack(app, 'MyECRStack');
 
 const sslStack = new MySslCertStack(app, 'MySslCertStack');
 
-// const vpcStack = new VpcStack(app, 'MyVpcStack');
+const vpcStack = new VpcStack(app, 'MyVpcStack');
 
-// const ecsStack = new ECSStack(app, 'MyECSStack', {
-//   vpc: vpcStack.vpc,
-//   nginxRepoName: ecrStack.nginxRepo.repositoryName,
-// }
-// )
-// ecsStack.addDependency(vpcStack);
+const ecsStack = new ECSStack(app, 'MyECSStack', {
+  vpc: vpcStack.vpc,
+  nginxRepoName: ecrStack.nginxRepo.repositoryName,
+}
+)
+ecsStack.addDependency(vpcStack);
+ecsStack.addDependency(sslStack);
+ecsStack.addDependency(s3Stack);

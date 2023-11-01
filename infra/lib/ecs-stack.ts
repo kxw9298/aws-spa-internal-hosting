@@ -7,6 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { aws_logs as logs } from 'aws-cdk-lib';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as sm from 'aws-cdk-lib/aws-secretsmanager';
 
 interface ECSStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
@@ -181,12 +182,22 @@ export class ECSStack extends cdk.Stack {
     // Define the CloudWatch Logs Group
     const logGroup = new logs.LogGroup(this, 'MyECSLogGroup');
 
+    // Import the secret ARN exported by the other stack
+    // Import the secret ARN exported by the other stack
+    const sslCertSecretArn = cdk.Fn.importValue('SslCertSecretArn');
+    const sslCertSecret = sm.Secret.fromSecretCompleteArn(this, 'ImportedSecret', sslCertSecretArn);
+
+
     const container = taskDef.addContainer('NginxContainer', {
       image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'cd2ed86'),
       memoryLimitMiB: 512,
       environment: {
         // This environment variable specifies the directory in EFS where Angular SPA assets are located
         APP_DIR: '/mnt/efs/app',
+      },
+      secrets: {
+        SSL_PRIVATE_KEY: ecs.Secret.fromSecretsManager(sslCertSecret, 'privateKey'), // Accessing the privateKey from the secret
+        SSL_CERTIFICATE: ecs.Secret.fromSecretsManager(sslCertSecret, 'certificate'), // Accessing the certificate from the secret
       },
       logging: new ecs.AwsLogDriver({
         streamPrefix: 'MyECSContainer',
