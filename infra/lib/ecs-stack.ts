@@ -105,12 +105,21 @@ export class ECSStack extends cdk.Stack {
       securityGroup: jumpBoxSecurityGroup,
       keyName: 'my-keypair',  // Make sure this key pair exists in your account or generate a new one
       userData: ec2.UserData.custom(`
-                #!/bin/bash
-                sudo yum -y install amazon-efs-utils  // Installing the EFS mount helper
-                mkdir ~/efs-mount-point
-                sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId}:/ ~/efs-mount-point
-                sudo chown ec2-user:ec2-user ~/efs-mount-point
-            `),
+          #!/bin/bash
+          
+          # Installing the EFS mount helper
+          sudo yum -y install amazon-efs-utils  
+          
+          # Creating a directory to mount the EFS file system
+          mkdir ~/efs-mount-point
+          
+          # Mounting the EFS file system
+          sudo mount -t efs -o tls,iam ${fileSystem.fileSystemId}:/ ~/efs-mount-point
+          
+          # Changing the owner of the mounted directory
+          sudo chown ec2-user:ec2-user ~/efs-mount-point
+      `),
+
     });
 
     // Security group updates for EFS and EC2 to communicate
@@ -146,7 +155,7 @@ export class ECSStack extends cdk.Stack {
     });
 
     ecsExecutionRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess','elasticfilesystem:DescribeMountTargets', 'elasticfilesystem:DescribeFileSystems'],
+      actions: ['elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite', 'elasticfilesystem:ClientRootAccess', 'elasticfilesystem:DescribeMountTargets', 'elasticfilesystem:DescribeFileSystems'],
       resources: ['*'], // You might want to scope this down
     }));
 
@@ -185,12 +194,12 @@ export class ECSStack extends cdk.Stack {
     // Import the secret ARN exported by the other stack
     const sslCertSecretArn = cdk.Fn.importValue('SslCertSecretArn');
     const sslCertSecret = sm.Secret.fromSecretCompleteArn(this, 'ImportedSecret', sslCertSecretArn);
-    
+
     sslCertSecret.grantRead(ecsExecutionRole);
     sslCertSecret.grantRead(ecsTaskRole);
 
     const container = taskDef.addContainer('NginxContainer', {
-      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'latest'),
+      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'fc88912'),
       memoryLimitMiB: 512,
       environment: {
         // This environment variable specifies the directory in EFS where Angular SPA assets are located
@@ -227,8 +236,8 @@ export class ECSStack extends cdk.Stack {
     // Allow NFS traffic from ECS security group to EFS mount target security group
     efsSecurityGroup.addIngressRule(ecsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic from ECS SG');
     // allow outbound connections on port 2049 to Amazon EFS file system's security group
-    ecsSecurityGroup.addEgressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic to EFS SG');
-    ecsSecurityGroup.addIngressRule(efsSecurityGroup,ec2.Port.tcp(2049), 'Allow NFS traffic to ECS SG');
+    ecsSecurityGroup.addEgressRule(efsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic to EFS SG');
+    ecsSecurityGroup.addIngressRule(efsSecurityGroup, ec2.Port.tcp(2049), 'Allow NFS traffic to ECS SG');
 
     // Mount targets in all subnets
     fileSystem.connections.securityGroups.push(efsSecurityGroup);
