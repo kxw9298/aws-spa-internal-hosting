@@ -22,5 +22,10 @@ export class S3Stack extends cdk.Stack {
       sources: [s3deploy.Source.asset('./dist')],  // Replace with your local directory path
       destinationBucket: this.bucket,
     });
+
+    new cdk.CfnOutput(this, 'myBucketName', {
+      value: this.bucket.bucketName,
+      exportName: 'myBucketName',
+  });
   }
 }

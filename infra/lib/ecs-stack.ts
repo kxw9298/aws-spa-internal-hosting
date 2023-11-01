@@ -93,7 +93,10 @@ export class ECSStack extends cdk.Stack {
 
     const region = this.region; // Get the current stack's region
     // Create a JumpBox
-
+    
+    // Import the bucker name exported by the other stack
+    const buckerName = cdk.Fn.importValue('myBucketName');
+    
     const jumpBox = new ec2.Instance(this, 'JumpBox', {
       vpc,
       vpcSubnets: {
@@ -118,6 +121,9 @@ export class ECSStack extends cdk.Stack {
           
           # Changing the owner of the mounted directory
           sudo chown ec2-user:ec2-user ~/efs-mount-point
+          
+          # transfer assets from s3 to efs
+          aws s3 cp s3://${buckerName}/app/ ~/efs-mount-point/app/  --recursive
       `),
 
     });
@@ -199,7 +205,7 @@ export class ECSStack extends cdk.Stack {
     sslCertSecret.grantRead(ecsTaskRole);
 
     const container = taskDef.addContainer('NginxContainer', {
-      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'fc88912'),
+      image: ecs.ContainerImage.fromEcrRepository(nginxRepo, 'a5b3b5b'),
       memoryLimitMiB: 512,
       environment: {
         // This environment variable specifies the directory in EFS where Angular SPA assets are located
@@ -279,7 +285,15 @@ export class ECSStack extends cdk.Stack {
       port: 443,
       targets: [],  // We will add our service to this target group later
       vpc: vpc,
-      protocol: elb.ApplicationProtocol.HTTP,
+      protocol: elb.ApplicationProtocol.HTTPS,
+      healthCheck: {
+        protocol: elb.Protocol.HTTPS,
+        path: '/health',  // your health check endpoint
+        interval: cdk.Duration.seconds(30), // Health check interval
+        timeout: cdk.Duration.seconds(5),   // Health check timeout
+        healthyThresholdCount: 2,   // Number of successful checks to be considered healthy
+        unhealthyThresholdCount: 2, // Number of failed checks to be considered unhealthy
+      },
     });
 
     // Add an HTTP listener to the ALB on port 80
