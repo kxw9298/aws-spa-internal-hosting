@@ -48,6 +48,11 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: '18' # Specify your Node.js version
+    
+    - name: Install CDK Dependencies
+      run: |
+        cd infra
+        npm install
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -55,6 +60,7 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
     - name: CDK Diff
       run: |
         cd infra  # Change to the directory containing your CDK project
@@ -65,6 +71,7 @@ jobs:
         cd infra
         npx cdk bootstrap
       # Include this if bootstrapping is needed for your setup
+      
     - name: CDK Deploy (Requires Manual Approval)
       run: |
         cd infra
