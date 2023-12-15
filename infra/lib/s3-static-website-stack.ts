@@ -100,17 +100,19 @@ export class S3StaticWebsiteStack extends Stack {
 
     nlbListener.addTargetGroups('NlbTargetGroupAttachment', nlbTargetGroup);
 
-    vpc.addGatewayEndpoint('S3Endpoint', {
+    const gatewayEndpoint = vpc.addGatewayEndpoint('S3Endpoint', {
       service: GatewayVpcEndpointAwsService.S3,
       subnets: [{ subnetType: SubnetType.PRIVATE_WITH_EGRESS}]
     });
 
     // Create an S3 VPC Endpoint
-    vpc.addInterfaceEndpoint('S3VpcEndpoint', {
+    const S3VpcEndpoint = vpc.addInterfaceEndpoint('S3VpcEndpoint', {
       service: InterfaceVpcEndpointAwsService.S3,
       privateDnsEnabled: true,
       subnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS}
     });
+
+    S3VpcEndpoint.node.addDependency(gatewayEndpoint);
 
     // Additional configurations (Route 53, etc.) go here
   }
