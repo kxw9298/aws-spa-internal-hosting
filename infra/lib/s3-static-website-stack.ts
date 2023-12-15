@@ -23,7 +23,17 @@ export class S3StaticWebsiteStack extends Stack {
 
     // Create VPC
     const vpc = new Vpc(this, 'MyVpc', {
-      maxAzs: 2
+      maxAzs: 2,
+      subnetConfiguration: [
+        {
+          name: 'public',
+          subnetType: SubnetType.PUBLIC,
+        },
+        {
+          name: 'private',
+          subnetType: SubnetType.PRIVATE_WITH_EGRESS,
+        },
+      ],
     });
 
     // Create a Security Group for the ALB
@@ -94,7 +104,7 @@ export class S3StaticWebsiteStack extends Stack {
     vpc.addInterfaceEndpoint('S3VpcEndpoint', {
       service: InterfaceVpcEndpointAwsService.S3,
       privateDnsEnabled: true,
-      subnets: { subnetType: SubnetType.PRIVATE_ISOLATED}
+      subnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS}
     });
 
     // Additional configurations (Route 53, etc.) go here

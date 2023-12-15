@@ -6,10 +6,8 @@ on:
       - s3-static-website
 
 jobs:
-  cdk-deploy:
+  cdk-build-and-diff:
     runs-on: ubuntu-latest
-    environment: 
-      name: cdk-deployment-approval
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -24,6 +22,16 @@ jobs:
         cd infra
         npm install
 
+    - name: CDK Synth (Dry Run)
+      run: |
+        cd infra
+        npx cdk synth
+
+  cdk-deploy:
+    runs-on: ubuntu-latest
+    environment: 
+      name: cdk-deployment-approval
+    steps:
     - name: CDK Synth (Dry Run)
       run: |
         cd infra
@@ -43,8 +51,8 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-
-  build-and-upload:
+    
+  angular-build:
     needs: cdk-deploy
     runs-on: ubuntu-latest
     steps:
@@ -69,6 +77,25 @@ jobs:
         cd app
         ng build --prod
 
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: angular-build-artifacts
+        path: app/dist/app/
+
+  upload-to-s3:
+    needs: angular-build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: angular-build-artifacts
+        path: app/dist/app/
+
     - name: Deploy to S3
       uses: jakejarvis/s3-sync-action@v0.5.1
       with:
@@ -78,4 +105,5 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        SOURCE_DIR: 'app/dist/app' # Replace with your build directory
+        SOURCE_DIR: 'app/dist/app/' # Replace with your build directory
+      
