@@ -5,7 +5,7 @@ import {
   ApplicationLoadBalancer, ApplicationListener, ApplicationTargetGroup,
   ListenerCondition
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Vpc, SecurityGroup, Peer, Port, InterfaceVpcEndpointAwsService, GatewayVpcEndpointAwsService, SubnetType } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, SecurityGroup, Peer, Port, InterfaceVpcEndpointAwsService, GatewayVpcEndpointAwsService, SubnetType, IpAddresses } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 export class S3StaticWebsiteStack extends Stack {
@@ -23,17 +23,15 @@ export class S3StaticWebsiteStack extends Stack {
 
     // Create VPC
     const vpc = new Vpc(this, 'MyVpc', {
+      ipAddresses: IpAddresses.cidr('10.0.0.0/24'),
       maxAzs: 2,
       subnetConfiguration: [
         {
           name: 'public',
           subnetType: SubnetType.PUBLIC,
-        },
-        {
-          name: 'private',
-          subnetType: SubnetType.PRIVATE_WITH_EGRESS,
-        },
+        }
       ],
+      natGateways: 0, // No NAT gateways required
     });
 
     // Create a Security Group for the ALB
@@ -102,14 +100,14 @@ export class S3StaticWebsiteStack extends Stack {
 
     const gatewayEndpoint = vpc.addGatewayEndpoint('S3Endpoint', {
       service: GatewayVpcEndpointAwsService.S3,
-      subnets: [{ subnetType: SubnetType.PRIVATE_WITH_EGRESS}]
+      subnets: [{ subnetType: SubnetType.PUBLIC}]
     });
 
     // Create an S3 VPC Endpoint
     const S3VpcEndpoint = vpc.addInterfaceEndpoint('S3VpcEndpoint', {
       service: InterfaceVpcEndpointAwsService.S3,
       privateDnsEnabled: true,
-      subnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS}
+      subnets: { subnetType: SubnetType.PUBLIC}
     });
 
     S3VpcEndpoint.node.addDependency(gatewayEndpoint);
