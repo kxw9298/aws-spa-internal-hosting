@@ -28,6 +28,16 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+    
+    - name: CDK Bootstrap
+      run: |
+        cd infra
+        npx cdk bootstrap
+
+    - name: Run CDK Synth
+      run: |
+        cd infra 
+        npx cdk synth
   
     - name: CDK Diff
       run: |
@@ -61,16 +71,20 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-    - name: CDK Diff
-      run: |
-        cd infra  # Change to the directory containing your CDK project
-        npx cdk diff
-    
     - name: CDK Bootstrap
       run: |
         cd infra
         npx cdk bootstrap
-      # Include this if bootstrapping is needed for your setup
+    
+    - name: Run CDK Synth
+      run: |
+        cd infra 
+        npx cdk synth
+
+    - name: CDK Diff
+      run: |
+        cd infra  # Change to the directory containing your CDK project
+        npx cdk diff
 
     - name: CDK Deploy
       run: |

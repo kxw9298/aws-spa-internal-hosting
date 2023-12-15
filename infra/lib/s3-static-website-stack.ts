@@ -105,6 +105,11 @@ export class S3StaticWebsiteStack extends Stack {
       // Optionally, add route table associations
     });
 
+    vpc.addGatewayEndpoint('S3Endpoint', {
+      service: GatewayVpcEndpointAwsService.S3,
+      subnets: [{ subnetType: SubnetType.PRIVATE_WITH_EGRESS}]
+    });
+
     // Create an S3 VPC Endpoint
     vpc.addInterfaceEndpoint('S3VpcEndpoint', {
       service: InterfaceVpcEndpointAwsService.S3,
