@@ -71,11 +71,12 @@ jobs:
         cd infra
         npx cdk bootstrap
       # Include this if bootstrapping is needed for your setup
-      
-    - name: CDK Deploy (Requires Manual Approval)
+
+    - name: CDK Deploy
       run: |
         cd infra
         npx cdk deploy
+
     
   angular-build:
     needs: cdk-deploy
