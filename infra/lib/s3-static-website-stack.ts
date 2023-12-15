@@ -99,11 +99,6 @@ export class S3StaticWebsiteStack extends Stack {
     });
 
     nlbListener.addTargetGroups('NlbTargetGroupAttachment', nlbTargetGroup);
-    
-    vpc.addGatewayEndpoint('S3Endpoint', {
-      service: GatewayVpcEndpointAwsService.S3,
-      // Optionally, add route table associations
-    });
 
     vpc.addGatewayEndpoint('S3Endpoint', {
       service: GatewayVpcEndpointAwsService.S3,
