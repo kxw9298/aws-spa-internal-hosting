@@ -5,7 +5,7 @@ import {
   ApplicationLoadBalancer, ApplicationListener, ApplicationTargetGroup,
   ListenerCondition
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Vpc, SecurityGroup, Peer, Port, InterfaceVpcEndpointAwsService, SubnetType } from 'aws-cdk-lib/aws-ec2';
+import { Vpc, SecurityGroup, Peer, Port, InterfaceVpcEndpointAwsService, GatewayVpcEndpointAwsService, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 export class S3StaticWebsiteStack extends Stack {
@@ -105,6 +105,11 @@ export class S3StaticWebsiteStack extends Stack {
       service: InterfaceVpcEndpointAwsService.S3,
       privateDnsEnabled: true,
       subnets: { subnetType: SubnetType.PRIVATE_WITH_EGRESS}
+    });
+
+    vpc.addGatewayEndpoint('S3Endpoint', {
+      service: GatewayVpcEndpointAwsService.S3,
+      // Optionally, add route table associations
     });
 
     // Additional configurations (Route 53, etc.) go here
