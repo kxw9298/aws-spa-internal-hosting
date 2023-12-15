@@ -11,3 +11,5 @@ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 [Create an SFTP-enabled server](https://docs.aws.amazon.com/transfer/latest/userguide/create-server-sftp.html)
 
 [Tutorial: Using Amazon EFS file systems with Amazon ECS using the console](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/tutorial-efs-volumes.html)
+
+[reference](https://chat.openai.com/c/d399910f-5776-43b9-92f4-5073c3d90d7d)

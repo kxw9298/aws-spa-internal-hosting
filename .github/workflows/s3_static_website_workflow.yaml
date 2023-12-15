@@ -119,7 +119,7 @@ jobs:
     - name: Build Angular Project
       run: |
         cd app
-        ng build --prod
+        ng build --configuration productiond
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2
