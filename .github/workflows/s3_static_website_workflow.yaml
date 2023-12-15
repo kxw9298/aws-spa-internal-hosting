@@ -75,7 +75,7 @@ jobs:
     - name: CDK Deploy
       run: |
         cd infra
-        npx cdk deploy
+        npx cdk deploy --require-approval never
 
     
   angular-build:
