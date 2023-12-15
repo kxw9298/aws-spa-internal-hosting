@@ -31,7 +31,7 @@ jobs:
   
     - name: CDK Diff
       run: |
-        cd infra  # Change to the directory containing your CDK project
+        cd infra
         npx cdk diff
 
   cdk-deploy:
@@ -41,6 +41,9 @@ jobs:
     environment: 
       name: cdk-deployment-approval
     steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
