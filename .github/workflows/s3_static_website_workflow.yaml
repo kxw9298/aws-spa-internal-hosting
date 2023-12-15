@@ -31,9 +31,12 @@ jobs:
   
     - name: CDK Diff
       run: |
+        cd infra  # Change to the directory containing your CDK project
         npx cdk diff
 
   cdk-deploy:
+    name: CDK Deploy
+    needs: cdk-build-and-diff
     runs-on: ubuntu-latest
     environment: 
       name: cdk-deployment-approval
@@ -44,9 +47,9 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-    
     - name: CDK Diff
       run: |
+        cd infra  # Change to the directory containing your CDK project
         npx cdk diff
     
     - name: CDK Bootstrap
@@ -54,7 +57,6 @@ jobs:
         cd infra
         npx cdk bootstrap
       # Include this if bootstrapping is needed for your setup
-
     - name: CDK Deploy (Requires Manual Approval)
       run: |
         cd infra
