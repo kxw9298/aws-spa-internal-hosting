@@ -41,7 +41,7 @@ export class S3StaticWebsiteStack extends Stack {
     const s3ProxyLambda = new lambda.Function(this, 'S3ProxyLambda', {
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 's3-proxy.handler',
-      code: lambda.Code.fromAsset('infra/lambda/s3-proxy.js'),
+      code: lambda.Code.fromAsset('lambda/s3-proxy.js'),
       vpc: vpc, // Deploy the Lambda function in the VPC
       environment: {
         BUCKET_NAME: bucket.bucketName,
