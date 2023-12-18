@@ -149,5 +149,5 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        SOURCE_DIR: 'app/dist/app/' # Replace with your build directory
+        SOURCE_DIR: 'app/dist/app/browser' # Replace with your build directory
       
