@@ -43,6 +43,7 @@ export class S3StaticWebsiteStack extends Stack {
       handler: 's3-proxy.handler',
       code: lambda.Code.fromAsset('../service/lambda'), 
       vpc: vpc, // Deploy the Lambda function in the VPC
+      allowPublicSubnet: true,
       environment: {
         BUCKET_NAME: bucket.bucketName,
       },
