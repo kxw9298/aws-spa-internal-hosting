@@ -78,7 +78,7 @@ export class S3StaticWebsiteStack extends Stack {
     // Create a target group for the Lambda function
     const lambdaTargetGroup = new ApplicationTargetGroup(this, 'LambdaTargetGroup', {
       vpc,
-      port: 80,
+      // port: 80, // This should be removed for Lambda targets
       targetType: elbv2.TargetType.LAMBDA,
     });
 
