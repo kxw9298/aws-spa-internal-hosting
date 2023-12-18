@@ -5,8 +5,11 @@ import {
   ApplicationLoadBalancer, ApplicationListener, ApplicationTargetGroup,
   ListenerCondition
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Vpc, SecurityGroup, Peer, Port, InterfaceVpcEndpointAwsService, GatewayVpcEndpointAwsService, SubnetType, IpAddresses } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 
 export class S3StaticWebsiteStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -34,6 +37,20 @@ export class S3StaticWebsiteStack extends Stack {
       natGateways: 0, // No NAT gateways required
     });
 
+    // Lambda function to retrieve content from S3
+    const s3ProxyLambda = new lambda.Function(this, 'S3ProxyLambda', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 's3-proxy.handler',
+      code: lambda.Code.fromAsset('infra/lambda/s3-proxy.js'),
+      vpc: vpc, // Deploy the Lambda function in the VPC
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+      },
+    });
+
+    // Grant the Lambda function read access to the S3 bucket
+    bucket.grantRead(s3ProxyLambda);
+
     // Create a Security Group for the ALB
     const albSecurityGroup = new SecurityGroup(this, 'AlbSecurityGroup', {
       vpc,
@@ -57,16 +74,25 @@ export class S3StaticWebsiteStack extends Stack {
       open: true
     });
 
-    // Create a target group for the ALB
-    const albTargetGroup = new ApplicationTargetGroup(this, 'AlbTargetGroup', {
+    // Create a target group for the Lambda function
+    const lambdaTargetGroup = new ApplicationTargetGroup(this, 'LambdaTargetGroup', {
       vpc,
       port: 80,
-      // targets: [Add your targets here, e.g., EC2 instances]
+      targetType: elbv2.TargetType.LAMBDA,
     });
 
-    albListener.addTargetGroups('AlbTargetGroupAttachment', {
-      targetGroups: [albTargetGroup]
+    // Create a Lambda function target
+    const lambdaFunctionTarget = new targets.LambdaTarget(s3ProxyLambda);
+    
+
+    // Attach the Lambda function target to the target group
+    lambdaTargetGroup.addTarget(lambdaFunctionTarget);
+
+    // Add the target group to the ALB listener
+    albListener.addTargetGroups('LambdaTargetGroupAttachment', {
+      targetGroups: [lambdaTargetGroup]
     });
+
 
     // Create a Security Group for the NLB
     const nlbSecurityGroup = new SecurityGroup(this, 'NlbSecurityGroup', {
