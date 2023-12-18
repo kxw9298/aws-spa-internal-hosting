@@ -40,7 +40,7 @@ export class S3StaticWebsiteStack extends Stack {
     // Lambda function to retrieve content from S3
     const s3ProxyLambda = new lambda.Function(this, 'S3ProxyLambda', {
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 's3-proxy.handler',
+      handler: 'index.handler',
       code: lambda.Code.fromAsset('../service/lambda'), 
       vpc: vpc, // Deploy the Lambda function in the VPC
       allowPublicSubnet: true,
