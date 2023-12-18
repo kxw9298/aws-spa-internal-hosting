@@ -18,9 +18,6 @@ jobs:
       run: |
         pwd
         ls -la
-        echo "cd infra && ls -la"
-        cd infra
-        ls -la
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
