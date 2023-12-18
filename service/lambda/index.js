@@ -1,28 +1,42 @@
-import AWS from 'aws-sdk';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new AWS.S3();
+const s3 = new S3Client({});
 
 export const handler = async (event) => {
     const bucketName = process.env.BUCKET_NAME;
-    const objectKey = event.path; // Adjust based on the incoming request format
+    const objectKey = event.path.substring(1); // Remove leading '/' from the path
 
     try {
-        const data = await s3.getObject({
+        const command = new GetObjectCommand({
             Bucket: bucketName,
             Key: objectKey,
-        }).promise();
+        });
+        const data = await s3.send(command);
+
+        // Assuming the content is text-based (adjust based on your use case)
+        const body = await streamToString(data.Body);
 
         return {
             statusCode: 200,
             headers: { 'Content-Type': data.ContentType },
-            body: data.Body.toString('base64'),
-            isBase64Encoded: true,
+            body: body,
+            isBase64Encoded: false,
         };
     } catch (error) {
         console.error(error);
         return {
-            statusCode: 500,
-            body: 'Internal Server Error',
+            statusCode: error.statusCode || 500,
+            body: error.message || 'Internal Server Error',
         };
     }
 };
+
+// Helper function to convert a stream to a string
+async function streamToString(stream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    });
+}
