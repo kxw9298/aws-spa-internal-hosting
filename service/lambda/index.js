@@ -3,8 +3,17 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 const s3 = new S3Client({});
 
 export const handler = async (event) => {
+    console.log('Received event:', JSON.stringify(event, null, 2)); // Log the received event
+
     const bucketName = process.env.BUCKET_NAME;
-    const objectKey = event.path.substring(1); // Remove leading '/' from the path
+    let objectKey = event.path.substring(1); // Remove leading '/' from the path
+
+    // Default to 'index.html' if no object key is provided
+    if (!objectKey || objectKey.endsWith('/')) {
+        objectKey = 'index.html';
+    }
+
+    console.log('Object Key:', objectKey); // Log the object key
 
     try {
         const command = new GetObjectCommand({
@@ -13,7 +22,6 @@ export const handler = async (event) => {
         });
         const data = await s3.send(command);
 
-        // Assuming the content is text-based (adjust based on your use case)
         const body = await streamToString(data.Body);
 
         return {
@@ -23,7 +31,8 @@ export const handler = async (event) => {
             isBase64Encoded: false,
         };
     } catch (error) {
-        console.error(error);
+        console.error('Error:', error);
+        // Handle specific errors (e.g., object not found) as needed
         return {
             statusCode: error.statusCode || 500,
             body: error.message || 'Internal Server Error',

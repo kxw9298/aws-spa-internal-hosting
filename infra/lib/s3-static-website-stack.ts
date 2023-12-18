@@ -123,6 +123,8 @@ export class S3StaticWebsiteStack extends Stack {
       // targets: [Add your targets here]
     });
 
+    nlbTargetGroup.addTarget(new targets.AlbTarget(alb, 80));
+
     nlbListener.addTargetGroups('NlbTargetGroupAttachment', nlbTargetGroup);
 
     const gatewayEndpoint = vpc.addGatewayEndpoint('S3Endpoint', {
